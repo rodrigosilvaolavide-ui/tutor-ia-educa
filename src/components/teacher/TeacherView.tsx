@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Users, FileText, BarChart3, Clock, TrendingUp, Sparkles, BookOpen } from 'lucide-react';
 import { mockStudents, mockSections, mockContent } from '@/lib/mock-data';
 import TeacherContent from './TeacherContent';
@@ -8,7 +7,8 @@ import TeacherReports from './TeacherReports';
 import { cn } from '@/lib/utils';
 
 interface TeacherViewProps {
-  initialTab?: string;
+  activeTab: string;
+  onTabChange: (tab: string) => void;
 }
 
 const tabs = [
@@ -19,8 +19,8 @@ const tabs = [
   { id: 'reports', label: 'Reportes', icon: <Sparkles size={16} /> },
 ];
 
-export default function TeacherView({ initialTab }: TeacherViewProps) {
-  const [activeTab, setActiveTab] = useState(initialTab || 'dashboard');
+export default function TeacherView({ activeTab, onTabChange }: TeacherViewProps) {
+  const setActiveTab = onTabChange;
 
   if (activeTab === 'content') return <TeacherContent onBack={() => setActiveTab('dashboard')} />;
   if (activeTab === 'students') return <TeacherStudents onBack={() => setActiveTab('dashboard')} />;

@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Users, Clock, TrendingUp, BookOpen, Sparkles, BarChart3, Download, Building2, GraduationCap } from 'lucide-react';
 import { mockSections, mockStudents } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
@@ -32,8 +31,13 @@ const pieData = [
   { name: 'Inactivos', value: 28, color: 'hsl(214, 20%, 90%)' },
 ];
 
-export default function DirectorView() {
-  const [activeTab, setActiveTab] = useState('summary');
+interface DirectorViewProps {
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+}
+
+export default function DirectorView({ activeTab, onTabChange }: DirectorViewProps) {
+  const setActiveTab = onTabChange;
 
   return (
     <div className="p-6 md:p-8 max-w-6xl mx-auto space-y-8 animate-fade-in">
