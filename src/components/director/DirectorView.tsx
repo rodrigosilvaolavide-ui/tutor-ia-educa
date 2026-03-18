@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Users, Clock, TrendingUp, BookOpen, Sparkles, BarChart3, Download, Building2, GraduationCap } from 'lucide-react';
 import { mockSections, mockStudents } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';

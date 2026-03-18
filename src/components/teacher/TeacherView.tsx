@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Users, FileText, BarChart3, Clock, TrendingUp, Sparkles, BookOpen } from 'lucide-react';
 import { mockStudents, mockSections, mockContent } from '@/lib/mock-data';
 import TeacherContent from './TeacherContent';
