@@ -64,11 +64,13 @@ function AppContent() {
     }
 
     if (role === 'profesor') {
-      return <TeacherView initialTab={currentView === 'home' ? 'dashboard' : currentView} />;
+      const teacherTab = currentView === 'home' ? 'dashboard' : currentView;
+      return <TeacherView activeTab={teacherTab} onTabChange={(tab) => setCurrentView(tab === 'dashboard' ? 'home' : tab)} />;
     }
 
     if (role === 'directivo') {
-      return <DirectorView />;
+      const directorTab = currentView === 'home' ? 'summary' : currentView;
+      return <DirectorView activeTab={directorTab} onTabChange={(tab) => setCurrentView(tab === 'summary' ? 'home' : tab)} />;
     }
 
     return null;
