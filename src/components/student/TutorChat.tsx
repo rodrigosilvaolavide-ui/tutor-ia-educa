@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
-import { Send, ArrowLeft, Sparkles, BookOpen, Lightbulb, PenTool, ListChecks, HelpCircle, FileText, ChevronRight, X } from 'lucide-react';
-import { sampleChatMessages } from '@/lib/mock-data';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { Send, ArrowLeft, Sparkles, BookOpen, Lightbulb, PenTool, ListChecks, HelpCircle, FileText, ChevronRight, X, AlertCircle } from 'lucide-react';
 import { ChatMessage } from '@/lib/types';
 import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface TutorChatProps {
   courseId: string;
@@ -23,11 +23,107 @@ const quickActions = [
   { label: 'Resúmeme este tema', icon: <FileText size={14} /> },
 ];
 
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/tutor-chat`;
+
+type ApiMessage = { role: 'user' | 'assistant'; content: string };
+
+async function streamChat({
+  messages,
+  courseName,
+  topic,
+  onDelta,
+  onDone,
+  onError,
+}: {
+  messages: ApiMessage[];
+  courseName: string;
+  topic?: string;
+  onDelta: (deltaText: string) => void;
+  onDone: () => void;
+  onError: (error: string) => void;
+}) {
+  const resp = await fetch(CHAT_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+    },
+    body: JSON.stringify({ messages, courseName, topic }),
+  });
+
+  if (!resp.ok) {
+    const errorData = await resp.json().catch(() => ({ error: 'Error de conexión' }));
+    onError(errorData.error || `Error ${resp.status}`);
+    return;
+  }
+
+  if (!resp.body) {
+    onError('No se recibió respuesta del tutor');
+    return;
+  }
+
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let textBuffer = '';
+  let streamDone = false;
+
+  while (!streamDone) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    textBuffer += decoder.decode(value, { stream: true });
+
+    let newlineIndex: number;
+    while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
+      let line = textBuffer.slice(0, newlineIndex);
+      textBuffer = textBuffer.slice(newlineIndex + 1);
+
+      if (line.endsWith('\r')) line = line.slice(0, -1);
+      if (line.startsWith(':') || line.trim() === '') continue;
+      if (!line.startsWith('data: ')) continue;
+
+      const jsonStr = line.slice(6).trim();
+      if (jsonStr === '[DONE]') {
+        streamDone = true;
+        break;
+      }
+
+      try {
+        const parsed = JSON.parse(jsonStr);
+        const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+        if (content) onDelta(content);
+      } catch {
+        textBuffer = line + '\n' + textBuffer;
+        break;
+      }
+    }
+  }
+
+  // Final flush
+  if (textBuffer.trim()) {
+    for (let raw of textBuffer.split('\n')) {
+      if (!raw) continue;
+      if (raw.endsWith('\r')) raw = raw.slice(0, -1);
+      if (raw.startsWith(':') || raw.trim() === '') continue;
+      if (!raw.startsWith('data: ')) continue;
+      const jsonStr = raw.slice(6).trim();
+      if (jsonStr === '[DONE]') continue;
+      try {
+        const parsed = JSON.parse(jsonStr);
+        const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+        if (content) onDelta(content);
+      } catch { /* ignore */ }
+    }
+  }
+
+  onDone();
+}
+
 export default function TutorChat({ courseId, courseName, topic, onBack }: TutorChatProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>(sampleChatMessages);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -35,9 +131,40 @@ export default function TutorChat({ courseId, courseName, topic, onBack }: Tutor
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSend = (text?: string) => {
+  // Auto-start: send empty messages to get initial greeting
+  useEffect(() => {
+    if (hasStarted) return;
+    setHasStarted(true);
+    setIsTyping(true);
+
+    let assistantSoFar = '';
+    const upsertAssistant = (chunk: string) => {
+      assistantSoFar += chunk;
+      setMessages(prev => {
+        const last = prev[prev.length - 1];
+        if (last?.role === 'assistant') {
+          return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: assistantSoFar } : m);
+        }
+        return [...prev, { id: `m${Date.now()}`, role: 'assistant', content: assistantSoFar, timestamp: new Date() }];
+      });
+    };
+
+    streamChat({
+      messages: [],
+      courseName,
+      topic: topic || 'General',
+      onDelta: upsertAssistant,
+      onDone: () => setIsTyping(false),
+      onError: (err) => {
+        setIsTyping(false);
+        toast.error(err);
+      },
+    });
+  }, []);
+
+  const handleSend = useCallback((text?: string) => {
     const content = text || input.trim();
-    if (!content) return;
+    if (!content || isTyping) return;
 
     const userMsg: ChatMessage = {
       id: `m${Date.now()}`,
@@ -49,17 +176,36 @@ export default function TutorChat({ courseId, courseName, topic, onBack }: Tutor
     setInput('');
     setIsTyping(true);
 
-    setTimeout(() => {
-      const aiMsg: ChatMessage = {
-        id: `m${Date.now() + 1}`,
-        role: 'assistant',
-        content: getAIResponse(content),
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, aiMsg]);
-      setIsTyping(false);
-    }, 1500);
-  };
+    // Build API messages from history
+    const apiMessages: ApiMessage[] = [
+      ...messages.map(m => ({ role: m.role, content: m.content })),
+      { role: 'user' as const, content },
+    ];
+
+    let assistantSoFar = '';
+    const upsertAssistant = (chunk: string) => {
+      assistantSoFar += chunk;
+      setMessages(prev => {
+        const last = prev[prev.length - 1];
+        if (last?.role === 'assistant' && last.id.startsWith('streaming-')) {
+          return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: assistantSoFar } : m);
+        }
+        return [...prev, { id: `streaming-${Date.now()}`, role: 'assistant', content: assistantSoFar, timestamp: new Date() }];
+      });
+    };
+
+    streamChat({
+      messages: apiMessages,
+      courseName,
+      topic: topic || 'General',
+      onDelta: upsertAssistant,
+      onDone: () => setIsTyping(false),
+      onError: (err) => {
+        setIsTyping(false);
+        toast.error(err);
+      },
+    });
+  }, [input, isTyping, messages, courseName, topic]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -79,7 +225,7 @@ export default function TutorChat({ courseId, courseName, topic, onBack }: Tutor
           </button>
           <div className="flex-1 min-w-0">
             <h2 className="font-heading font-semibold text-sm text-foreground">{courseName}</h2>
-            <p className="text-xs text-muted-foreground truncate">{topic || 'Ecuaciones lineales'}</p>
+            <p className="text-xs text-muted-foreground truncate">{topic || 'Tema general'}</p>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -132,7 +278,7 @@ export default function TutorChat({ courseId, courseName, topic, onBack }: Tutor
             ))}
           </AnimatePresence>
 
-          {isTyping && (
+          {isTyping && messages.length === 0 && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -160,7 +306,8 @@ export default function TutorChat({ courseId, courseName, topic, onBack }: Tutor
               <button
                 key={action.label}
                 onClick={() => handleSend(action.label)}
-                className="chip whitespace-nowrap shrink-0 text-xs"
+                disabled={isTyping}
+                className="chip whitespace-nowrap shrink-0 text-xs disabled:opacity-50"
               >
                 {action.icon}
                 {action.label}
@@ -183,7 +330,7 @@ export default function TutorChat({ courseId, courseName, topic, onBack }: Tutor
             />
             <button
               onClick={() => handleSend()}
-              disabled={!input.trim()}
+              disabled={!input.trim() || isTyping}
               className="p-2 rounded-xl bg-primary text-primary-foreground disabled:opacity-40 hover:bg-primary/90 transition-colors shrink-0"
             >
               <Send size={16} />
@@ -206,83 +353,49 @@ export default function TutorChat({ courseId, courseName, topic, onBack }: Tutor
         <div className="flex-1 overflow-auto p-4 space-y-5">
           <div>
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Tema actual</p>
-            <p className="text-sm font-medium text-foreground">Ecuaciones lineales</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Álgebra · Matemática</p>
+            <p className="text-sm font-medium text-foreground">{topic || 'Tema general'}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{courseName}</p>
           </div>
 
           <div>
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Conceptos clave</p>
-            <ul className="space-y-1.5">
-              {['Despejar variables', 'Operaciones inversas', 'Verificación de soluciones', 'Ecuaciones con fracciones'].map(c => (
-                <li key={c} className="flex items-center gap-2 text-sm text-foreground">
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-                  {c}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Progreso de sesión</p>
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">Comprensión</span>
-                <span className="font-medium text-foreground">75%</span>
-              </div>
-              <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                <div className="h-full bg-primary rounded-full transition-all" style={{ width: '75%' }} />
-              </div>
-            </div>
-            <div className="space-y-2 mt-3">
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">Ejercicios resueltos</span>
-                <span className="font-medium text-foreground">3/5</span>
-              </div>
-              <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                <div className="h-full bg-success rounded-full transition-all" style={{ width: '60%' }} />
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Sugerencias</p>
-            <div className="space-y-2">
-              {['Practica con ecuaciones fraccionarias', 'Repasa operaciones inversas', 'Intenta el mini quiz'].map(s => (
-                <button key={s} className="w-full text-left text-xs px-3 py-2 rounded-lg bg-muted/50 hover:bg-muted text-foreground transition-colors">
-                  {s}
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Acciones rápidas</p>
+            <div className="space-y-1.5">
+              {quickActions.slice(0, 4).map((action) => (
+                <button
+                  key={action.label}
+                  onClick={() => handleSend(action.label)}
+                  disabled={isTyping}
+                  className="w-full flex items-center gap-2 text-left text-xs px-3 py-2 rounded-lg bg-muted/50 hover:bg-muted text-foreground transition-colors disabled:opacity-50"
+                >
+                  {action.icon}
+                  {action.label}
                 </button>
               ))}
             </div>
           </div>
 
           <div>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Sesión</p>
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Mensajes</span>
+                <span className="font-medium text-foreground">{messages.length}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Estado</span>
+                <span className="font-medium text-success">Activo</span>
+              </div>
+            </div>
+          </div>
+
+          <div>
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Objetivo de la sesión</p>
             <div className="px-3 py-2 rounded-lg bg-primary/5 border border-primary/10">
-              <p className="text-xs text-foreground">Resolver ecuaciones lineales de primer grado con una incógnita</p>
+              <p className="text-xs text-foreground">Estudiar y practicar con el Tutor AI sobre {topic || courseName}</p>
             </div>
           </div>
         </div>
       </div>
     </div>
   );
-}
-
-function getAIResponse(input: string): string {
-  const lower = input.toLowerCase();
-  if (lower.includes('pista') || lower.includes('ayuda')) {
-    return '💡 **Pista:**\n\nRecuerda que el primer paso siempre es **mover los números al lado opuesto** de la variable.\n\n¿Qué número puedes mover primero en tu ecuación?';
-  }
-  if (lower.includes('ejemplo')) {
-    return '📝 **Ejemplo:**\n\nResolvamos juntos: `5x + 3 = 28`\n\n**Paso 1:** Restamos 3 de ambos lados:\n```\n5x = 28 - 3\n5x = 25\n```\n\n**Paso 2:** Dividimos entre 5:\n```\nx = 25 ÷ 5\nx = 5\n```\n\n✅ **Verificación:** 5(5) + 3 = 25 + 3 = 28 ✓\n\n¿Quieres intentar uno similar?';
-  }
-  if (lower.includes('evalú') || lower.includes('quiz')) {
-    return '📋 **Mini evaluación - Ecuaciones lineales**\n\nResuelve las siguientes ecuaciones:\n\n1. `4x + 2 = 18`\n2. `7x - 5 = 23`\n3. `2x + 9 = 3x - 1`\n\nEscribe tus respuestas una por una y te las reviso. ¡Tú puedes! 💪';
-  }
-  if (lower.includes('ejercicio')) {
-    return '✏️ **3 ejercicios para practicar:**\n\n1. `6x - 4 = 20`\n2. `3x + 7 = 2x + 15`\n3. `2(x + 3) = 14`\n\nIntenta resolverlos paso a paso. Cuando termines, dime tus respuestas y las revisamos juntos.';
-  }
-  if (lower.includes('resumen') || lower.includes('resúme')) {
-    return '📖 **Resumen: Ecuaciones lineales**\n\nUna ecuación lineal es una igualdad con una variable elevada a la primera potencia.\n\n**Para resolver:**\n1. Agrupar términos con x de un lado\n2. Agrupar números del otro lado\n3. Simplificar\n4. Despejar x\n\n**Regla de oro:** Lo que haces de un lado, lo haces del otro.\n\n¿Hay algo que quieras repasar con más detalle?';
-  }
-  return '¡Muy bien! 👏\n\nVeamos tu respuesta...\n\nEl primer paso es correcto: mover el **-7** al otro lado. Queda:\n```\n3x = 14 + 7\n3x = 21\n```\n\nAhora, ¿cuál es el siguiente paso para encontrar el valor de x?';
 }
