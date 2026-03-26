@@ -3,7 +3,7 @@ import { useRole } from '@/contexts/RoleContext';
 import { UserRole } from '@/lib/types';
 import {
   BookOpen, GraduationCap, BarChart3, Users, FileText,
-  LayoutDashboard, ChevronDown, Sparkles, Menu, X
+  LayoutDashboard, ChevronDown, Sparkles, Menu, X, MessageSquare
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
