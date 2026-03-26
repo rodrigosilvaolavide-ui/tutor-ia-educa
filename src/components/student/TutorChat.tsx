@@ -159,11 +159,21 @@ export default function TutorChat({ courseId, courseName, topic, onBack, existin
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Auto-save messages to localStorage
+  useEffect(() => {
+    if (!sessionId || messages.length === 0 || isTyping) return;
+    updateSessionMessages(sessionId, messages, tutorMode);
+  }, [messages, isTyping, sessionId, tutorMode]);
+
   // Auto-start: send empty messages to get initial greeting
   useEffect(() => {
     if (hasStarted) return;
     setHasStarted(true);
     setIsTyping(true);
+
+    // Create a new session
+    const newSession = createSession(courseId, courseName, topic || 'General', tutorMode);
+    setSessionId(newSession.id);
 
     let assistantSoFar = '';
     const upsertAssistant = (chunk: string) => {
