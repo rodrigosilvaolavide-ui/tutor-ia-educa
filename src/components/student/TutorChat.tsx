@@ -25,6 +25,15 @@ const quickActions = [
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/tutor-chat`;
 
+type TutorMode = 'Teoría' | 'Ejercicios' | 'Problemas' | 'Investigación';
+
+const tutorModes: { value: TutorMode; icon: React.ReactNode; description: string }[] = [
+  { value: 'Teoría', icon: <BookOpen size={14} />, description: 'Conceptos y definiciones' },
+  { value: 'Ejercicios', icon: <PenTool size={14} />, description: 'Práctica guiada' },
+  { value: 'Problemas', icon: <Lightbulb size={14} />, description: 'Retos aplicados' },
+  { value: 'Investigación', icon: <Search size={14} />, description: 'Exploración profunda' },
+];
+
 type ApiMessage = { role: 'user' | 'assistant'; content: string };
 
 async function streamChat({
