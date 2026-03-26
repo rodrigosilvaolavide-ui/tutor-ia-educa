@@ -12,6 +12,7 @@ interface TutorChatProps {
   courseName: string;
   topic?: string;
   onBack: () => void;
+  existingSession?: ChatSession;
 }
 
 const quickActions = [
