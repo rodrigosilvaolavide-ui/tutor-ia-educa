@@ -17,6 +17,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
   alumno: [
     { label: 'Inicio', id: 'home', icon: <LayoutDashboard size={20} /> },
     { label: 'Estudiar', id: 'study', icon: <BookOpen size={20} /> },
+    { label: 'Historial', id: 'history', icon: <MessageSquare size={20} /> },
     { label: 'Mi progreso', id: 'progress', icon: <BarChart3 size={20} /> },
   ],
   profesor: [

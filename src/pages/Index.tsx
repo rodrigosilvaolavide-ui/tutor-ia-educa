@@ -5,13 +5,15 @@ import StudentHome from '@/components/student/StudentHome';
 import CourseSelect from '@/components/student/CourseSelect';
 import TutorChat from '@/components/student/TutorChat';
 import StudentProgress from '@/components/student/StudentProgress';
+import ChatHistory from '@/components/student/ChatHistory';
 import TeacherView from '@/components/teacher/TeacherView';
 import DirectorView from '@/components/director/DirectorView';
+import { ChatSession } from '@/lib/chat-storage';
 
 function AppContent() {
   const { role } = useRole();
   const [currentView, setCurrentView] = useState('home');
-  const [chatState, setChatState] = useState<{ courseId: string; courseName: string; topic?: string } | null>(null);
+  const [chatState, setChatState] = useState<{ courseId: string; courseName: string; topic?: string; session?: ChatSession } | null>(null);
   const [selectingCourse, setSelectingCourse] = useState<string | undefined>(undefined);
   const [showCourseSelect, setShowCourseSelect] = useState(false);
 
@@ -36,6 +38,16 @@ function AppContent() {
     setShowCourseSelect(false);
   };
 
+  const handleResumeSession = (session: ChatSession) => {
+    setChatState({
+      courseId: session.courseId,
+      courseName: session.courseName,
+      topic: session.topic,
+      session,
+    });
+    setCurrentView('study');
+  };
+
   const renderContent = () => {
     if (role === 'alumno') {
       if (chatState) {
@@ -45,6 +57,15 @@ function AppContent() {
             courseName={chatState.courseName}
             topic={chatState.topic}
             onBack={() => { setChatState(null); setShowCourseSelect(true); }}
+            existingSession={chatState.session}
+          />
+        );
+      }
+      if (currentView === 'history') {
+        return (
+          <ChatHistory
+            onBack={() => setCurrentView('home')}
+            onResumeSession={handleResumeSession}
           />
         );
       }
