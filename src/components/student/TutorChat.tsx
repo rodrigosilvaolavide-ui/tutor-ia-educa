@@ -224,6 +224,7 @@ export default function TutorChat({ courseId, courseName, topic, onBack }: Tutor
       messages: apiMessages,
       courseName,
       topic: topic || 'General',
+      mode: tutorMode,
       onDelta: upsertAssistant,
       onDone: () => setIsTyping(false),
       onError: (err) => {
@@ -231,7 +232,7 @@ export default function TutorChat({ courseId, courseName, topic, onBack }: Tutor
         toast.error(err);
       },
     });
-  }, [input, isTyping, messages, courseName, topic]);
+  }, [input, isTyping, messages, courseName, topic, tutorMode]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
