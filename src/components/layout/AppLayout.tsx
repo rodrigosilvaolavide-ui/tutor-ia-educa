@@ -3,7 +3,7 @@ import { useRole } from '@/contexts/RoleContext';
 import { UserRole } from '@/lib/types';
 import {
   BookOpen, GraduationCap, BarChart3, Users, FileText,
-  LayoutDashboard, ChevronDown, Sparkles, Menu, X
+  LayoutDashboard, ChevronDown, Sparkles, Menu, X, MessageSquare
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -17,6 +17,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
   alumno: [
     { label: 'Inicio', id: 'home', icon: <LayoutDashboard size={20} /> },
     { label: 'Estudiar', id: 'study', icon: <BookOpen size={20} /> },
+    { label: 'Historial', id: 'history', icon: <MessageSquare size={20} /> },
     { label: 'Mi progreso', id: 'progress', icon: <BarChart3 size={20} /> },
   ],
   profesor: [

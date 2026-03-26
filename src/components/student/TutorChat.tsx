@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, ArrowLeft, Sparkles, BookOpen, Lightbulb, PenTool, ListChecks, HelpCircle, FileText, ChevronRight, X, AlertCircle, ChevronDown, Check, Search } from 'lucide-react';
 import { ChatMessage } from '@/lib/types';
+import { ChatSession, createSession, updateSessionMessages } from '@/lib/chat-storage';
 import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -11,6 +12,7 @@ interface TutorChatProps {
   courseName: string;
   topic?: string;
   onBack: () => void;
+  existingSession?: ChatSession;
 }
 
 const quickActions = [
@@ -129,14 +131,15 @@ async function streamChat({
   onDone();
 }
 
-export default function TutorChat({ courseId, courseName, topic, onBack }: TutorChatProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+export default function TutorChat({ courseId, courseName, topic, onBack, existingSession }: TutorChatProps) {
+  const [messages, setMessages] = useState<ChatMessage[]>(existingSession?.messages || []);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
-  const [hasStarted, setHasStarted] = useState(false);
-  const [tutorMode, setTutorMode] = useState<TutorMode>('Teoría');
+  const [hasStarted, setHasStarted] = useState(!!existingSession);
+  const [tutorMode, setTutorMode] = useState<TutorMode>((existingSession?.mode as TutorMode) || 'Teoría');
   const [showModeMenu, setShowModeMenu] = useState(false);
+  const [sessionId, setSessionId] = useState<string>(existingSession?.id || '');
   const modeMenuRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -156,11 +159,21 @@ export default function TutorChat({ courseId, courseName, topic, onBack }: Tutor
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Auto-save messages to localStorage
+  useEffect(() => {
+    if (!sessionId || messages.length === 0 || isTyping) return;
+    updateSessionMessages(sessionId, messages, tutorMode);
+  }, [messages, isTyping, sessionId, tutorMode]);
+
   // Auto-start: send empty messages to get initial greeting
   useEffect(() => {
     if (hasStarted) return;
     setHasStarted(true);
     setIsTyping(true);
+
+    // Create a new session
+    const newSession = createSession(courseId, courseName, topic || 'General', tutorMode);
+    setSessionId(newSession.id);
 
     let assistantSoFar = '';
     const upsertAssistant = (chunk: string) => {
