@@ -40,6 +40,7 @@ async function streamChat({
   messages,
   courseName,
   topic,
+  mode,
   onDelta,
   onDone,
   onError,
@@ -47,6 +48,7 @@ async function streamChat({
   messages: ApiMessage[];
   courseName: string;
   topic?: string;
+  mode?: TutorMode;
   onDelta: (deltaText: string) => void;
   onDone: () => void;
   onError: (error: string) => void;
@@ -57,7 +59,7 @@ async function streamChat({
       'Content-Type': 'application/json',
       Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
     },
-    body: JSON.stringify({ messages, courseName, topic }),
+    body: JSON.stringify({ messages, courseName, topic, mode }),
   });
 
   if (!resp.ok) {
