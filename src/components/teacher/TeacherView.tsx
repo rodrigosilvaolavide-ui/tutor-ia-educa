@@ -1,5 +1,6 @@
-import { Users, FileText, BarChart3, Clock, TrendingUp, Sparkles, BookOpen } from 'lucide-react';
-import { mockStudents, mockSections, mockContent } from '@/lib/mock-data';
+import { useState } from 'react';
+import { Users, BarChart3, Clock, TrendingUp, Sparkles, Calendar } from 'lucide-react';
+import { mockStudents, mockSections } from '@/lib/mock-data';
 import TeacherContent from './TeacherContent';
 import TeacherStudents from './TeacherStudents';
 import TeacherSections from './TeacherSections';
@@ -11,52 +12,47 @@ interface TeacherViewProps {
   onTabChange: (tab: string) => void;
 }
 
-const tabs = [
-  { id: 'dashboard', label: 'Dashboard', icon: <BarChart3 size={16} /> },
-  { id: 'content', label: 'Contenido', icon: <FileText size={16} /> },
-  { id: 'students', label: 'Alumnos', icon: <Users size={16} /> },
-  { id: 'sections', label: 'Secciones', icon: <BookOpen size={16} /> },
-  { id: 'reports', label: 'Reportes', icon: <Sparkles size={16} /> },
-];
-
 export default function TeacherView({ activeTab, onTabChange }: TeacherViewProps) {
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState<'week' | 'month' | 'bimester'>('week');
+
   const setActiveTab = onTabChange;
 
   if (activeTab === 'content') return <TeacherContent onBack={() => setActiveTab('dashboard')} />;
-  if (activeTab === 'students') return <TeacherStudents onBack={() => setActiveTab('dashboard')} />;
+  if (activeTab === 'students') return <TeacherStudents onBack={() => setActiveTab('dashboard')} initialStudentId={selectedStudentId} onClearStudent={() => setSelectedStudentId(null)} />;
   if (activeTab === 'sections') return <TeacherSections onBack={() => setActiveTab('dashboard')} />;
   if (activeTab === 'reports') return <TeacherReports onBack={() => setActiveTab('dashboard')} />;
 
+  const dateLabels = { week: 'Esta semana', month: 'Este mes', bimester: 'Este bimestre' };
+
   return (
     <div className="p-6 md:p-8 max-w-6xl mx-auto space-y-8 animate-fade-in">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="heading-1 text-foreground">Dashboard</h1>
           <p className="text-muted-foreground mt-1">Resumen de actividad de tus alumnos con el Tutor AI</p>
         </div>
+        {/* Date filter */}
+        <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1">
+          {(['week', 'month', 'bimester'] as const).map(d => (
+            <button
+              key={d}
+              onClick={() => setDateRange(d)}
+              className={cn(
+                'px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
+                dateRange === d ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {dateLabels[d]}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Quick Nav Tabs */}
-      <div className="flex gap-2 overflow-x-auto">
-        {tabs.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={cn(
-              'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors',
-              activeTab === tab.id ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-foreground hover:bg-muted'
-            )}
-          >
-            {tab.icon} {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Stats — removed "Contenido subido" */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {[
-          { label: 'Alumnos activos', value: `${mockStudents.filter(s => !s.needsAttention).length + mockStudents.filter(s => s.needsAttention).length}`, sub: 'de 126 totales', icon: <Users size={18} />, color: 'text-primary' },
-          { label: 'Contenido subido', value: `${mockContent.length}`, sub: `${mockContent.filter(c => c.status === 'ready').length} listos`, icon: <FileText size={18} />, color: 'text-info' },
+          { label: 'Alumnos activos', value: `${mockStudents.length}`, sub: 'de 126 totales', icon: <Users size={18} />, color: 'text-primary' },
           { label: 'Sesiones esta semana', value: '87', sub: '+12% vs. semana pasada', icon: <TrendingUp size={18} />, color: 'text-success' },
           { label: 'Tiempo promedio', value: '22 min', sub: 'por sesión', icon: <Clock size={18} />, color: 'text-warning' },
         ].map(s => (
@@ -69,7 +65,7 @@ export default function TeacherView({ activeTab, onTabChange }: TeacherViewProps
         ))}
       </div>
 
-      {/* Alerts */}
+      {/* AI Insights */}
       <div className="stat-card border-warning/30 bg-warning/5">
         <div className="flex items-center gap-2 mb-3">
           <Sparkles size={16} className="text-warning" />
@@ -88,15 +84,18 @@ export default function TeacherView({ activeTab, onTabChange }: TeacherViewProps
         </div>
       </div>
 
-      {/* Students needing attention */}
+      {/* Students needing attention — click opens student profile */}
       <div>
         <h2 className="heading-3 text-foreground mb-4">Alumnos que necesitan atención</h2>
         <div className="grid md:grid-cols-2 gap-4">
           {mockStudents.filter(s => s.needsAttention).map(student => (
             <button
               key={student.id}
-              onClick={() => setActiveTab('students')}
-              className="stat-card flex items-center gap-4 text-left group"
+              onClick={() => {
+                setSelectedStudentId(student.id);
+                setActiveTab('students');
+              }}
+              className="stat-card flex items-center gap-4 text-left group hover:border-primary/30 transition-colors"
             >
               <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center text-sm font-semibold text-destructive">
                 {student.name.split(' ').map(n => n[0]).join('')}
@@ -111,7 +110,7 @@ export default function TeacherView({ activeTab, onTabChange }: TeacherViewProps
         </div>
       </div>
 
-      {/* Section summary */}
+      {/* Sections — improved UI */}
       <div>
         <h2 className="heading-3 text-foreground mb-4">Mis secciones</h2>
         <div className="grid md:grid-cols-2 gap-4">
@@ -119,7 +118,7 @@ export default function TeacherView({ activeTab, onTabChange }: TeacherViewProps
             <button
               key={sec.id}
               onClick={() => setActiveTab('sections')}
-              className="stat-card text-left group"
+              className="stat-card text-left group hover:border-primary/30 transition-colors"
             >
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-heading font-semibold text-foreground">{sec.name}</h3>
@@ -134,7 +133,7 @@ export default function TeacherView({ activeTab, onTabChange }: TeacherViewProps
               </div>
               <div className="grid grid-cols-3 gap-3 text-center">
                 <div>
-                  <p className="text-lg font-bold font-heading text-foreground">{sec.activeStudents}</p>
+                  <p className="text-lg font-bold font-heading text-foreground">{sec.activeStudents}/{sec.totalStudents}</p>
                   <p className="text-xs text-muted-foreground">Activos</p>
                 </div>
                 <div>
@@ -147,7 +146,11 @@ export default function TeacherView({ activeTab, onTabChange }: TeacherViewProps
                 </div>
               </div>
               {sec.weakTopics.length > 0 && (
-                <p className="text-xs text-muted-foreground mt-3">Temas débiles: {sec.weakTopics.join(', ')}</p>
+                <div className="mt-3 flex items-center gap-2">
+                  <span className="text-xs px-2 py-1 rounded-full bg-warning/10 text-warning font-medium">
+                    {sec.weakTopics.length} {sec.weakTopics.length === 1 ? 'tema débil' : 'temas débiles'}
+                  </span>
+                </div>
               )}
             </button>
           ))}
