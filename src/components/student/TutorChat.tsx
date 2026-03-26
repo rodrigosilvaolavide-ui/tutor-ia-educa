@@ -135,8 +135,22 @@ export default function TutorChat({ courseId, courseName, topic, onBack }: Tutor
   const [isTyping, setIsTyping] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
+  const [tutorMode, setTutorMode] = useState<TutorMode>('Teoría');
+  const [showModeMenu, setShowModeMenu] = useState(false);
+  const modeMenuRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Close mode menu on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (modeMenuRef.current && !modeMenuRef.current.contains(e.target as Node)) {
+        setShowModeMenu(false);
+      }
+    };
+    if (showModeMenu) document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showModeMenu]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
