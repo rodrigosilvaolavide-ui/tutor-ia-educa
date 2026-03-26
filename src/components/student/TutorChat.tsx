@@ -131,14 +131,15 @@ async function streamChat({
   onDone();
 }
 
-export default function TutorChat({ courseId, courseName, topic, onBack }: TutorChatProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+export default function TutorChat({ courseId, courseName, topic, onBack, existingSession }: TutorChatProps) {
+  const [messages, setMessages] = useState<ChatMessage[]>(existingSession?.messages || []);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
-  const [hasStarted, setHasStarted] = useState(false);
-  const [tutorMode, setTutorMode] = useState<TutorMode>('Teoría');
+  const [hasStarted, setHasStarted] = useState(!!existingSession);
+  const [tutorMode, setTutorMode] = useState<TutorMode>((existingSession?.mode as TutorMode) || 'Teoría');
   const [showModeMenu, setShowModeMenu] = useState(false);
+  const [sessionId, setSessionId] = useState<string>(existingSession?.id || '');
   const modeMenuRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
