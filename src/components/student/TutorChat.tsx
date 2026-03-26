@@ -178,6 +178,7 @@ export default function TutorChat({ courseId, courseName, topic, onBack }: Tutor
       messages: [],
       courseName,
       topic: topic || 'General',
+      mode: tutorMode,
       onDelta: upsertAssistant,
       onDone: () => setIsTyping(false),
       onError: (err) => {
