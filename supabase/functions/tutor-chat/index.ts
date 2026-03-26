@@ -35,18 +35,27 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, courseName, topic } = await req.json();
+    const { messages, courseName, topic, mode } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
+    const modeInstructions: Record<string, string> = {
+      'Teoría': `\n\nMODO ACTIVO: TEORÍA\n- Prioriza explicaciones conceptuales claras, definiciones y relaciones entre conceptos.\n- Usa analogías y ejemplos ilustrativos.\n- Estructura la información con headers y listas.\n- Al final, verifica comprensión con una pregunta conceptual.`,
+      'Ejercicios': `\n\nMODO ACTIVO: EJERCICIOS\n- Genera ejercicios de práctica con dificultad progresiva.\n- Valida las respuestas del alumno paso a paso.\n- Si se equivoca, señala dónde está el error y guía la corrección.\n- Ofrece ejercicios similares para reforzar.`,
+      'Problemas': `\n\nMODO ACTIVO: PROBLEMAS\n- Plantea problemas aplicados y contextualizados (situaciones reales).\n- Usa el método socrático: guía con preguntas, no des la respuesta directa.\n- Descompón problemas complejos en pasos manejables.\n- Fomenta el razonamiento crítico.`,
+      'Investigación': `\n\nMODO ACTIVO: INVESTIGACIÓN\n- Fomenta la exploración profunda y la curiosidad.\n- Conecta el tema con otras disciplinas y aplicaciones del mundo real.\n- Plantea preguntas abiertas que inviten a reflexionar.\n- Sugiere recursos, experimentos mentales o líneas de investigación.`,
+    };
+
+    const systemContent = SYSTEM_PROMPT + (modeInstructions[mode] || modeInstructions['Teoría']);
 
     // Prepend context about the course/topic
     const contextMessage = {
       role: "user",
-      content: `[CONTEXTO DEL SISTEMA - No mostrar al alumno] El alumno está estudiando el curso "${courseName || 'General'}", tema: "${topic || 'General'}". Saluda brevemente y pregunta en qué necesita ayuda sobre este tema.`,
+      content: `[CONTEXTO DEL SISTEMA - No mostrar al alumno] El alumno está estudiando el curso "${courseName || 'General'}", tema: "${topic || 'General'}". Modo: ${mode || 'Teoría'}. Saluda brevemente y comienza según el modo activo.`,
     };
 
     const allMessages = [
-      { role: "system", content: SYSTEM_PROMPT },
+      { role: "system", content: systemContent },
       ...(messages.length === 0 ? [contextMessage] : messages),
     ];
 

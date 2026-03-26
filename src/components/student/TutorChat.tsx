@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, ArrowLeft, Sparkles, BookOpen, Lightbulb, PenTool, ListChecks, HelpCircle, FileText, ChevronRight, X, AlertCircle } from 'lucide-react';
+import { Send, ArrowLeft, Sparkles, BookOpen, Lightbulb, PenTool, ListChecks, HelpCircle, FileText, ChevronRight, X, AlertCircle, ChevronDown, Check, Search } from 'lucide-react';
 import { ChatMessage } from '@/lib/types';
 import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -25,12 +25,22 @@ const quickActions = [
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/tutor-chat`;
 
+type TutorMode = 'Teoría' | 'Ejercicios' | 'Problemas' | 'Investigación';
+
+const tutorModes: { value: TutorMode; icon: React.ReactNode; description: string }[] = [
+  { value: 'Teoría', icon: <BookOpen size={14} />, description: 'Conceptos y definiciones' },
+  { value: 'Ejercicios', icon: <PenTool size={14} />, description: 'Práctica guiada' },
+  { value: 'Problemas', icon: <Lightbulb size={14} />, description: 'Retos aplicados' },
+  { value: 'Investigación', icon: <Search size={14} />, description: 'Exploración profunda' },
+];
+
 type ApiMessage = { role: 'user' | 'assistant'; content: string };
 
 async function streamChat({
   messages,
   courseName,
   topic,
+  mode,
   onDelta,
   onDone,
   onError,
@@ -38,6 +48,7 @@ async function streamChat({
   messages: ApiMessage[];
   courseName: string;
   topic?: string;
+  mode?: TutorMode;
   onDelta: (deltaText: string) => void;
   onDone: () => void;
   onError: (error: string) => void;
@@ -48,7 +59,7 @@ async function streamChat({
       'Content-Type': 'application/json',
       Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
     },
-    body: JSON.stringify({ messages, courseName, topic }),
+    body: JSON.stringify({ messages, courseName, topic, mode }),
   });
 
   if (!resp.ok) {
@@ -124,8 +135,22 @@ export default function TutorChat({ courseId, courseName, topic, onBack }: Tutor
   const [isTyping, setIsTyping] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
+  const [tutorMode, setTutorMode] = useState<TutorMode>('Teoría');
+  const [showModeMenu, setShowModeMenu] = useState(false);
+  const modeMenuRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Close mode menu on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (modeMenuRef.current && !modeMenuRef.current.contains(e.target as Node)) {
+        setShowModeMenu(false);
+      }
+    };
+    if (showModeMenu) document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showModeMenu]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -153,6 +178,7 @@ export default function TutorChat({ courseId, courseName, topic, onBack }: Tutor
       messages: [],
       courseName,
       topic: topic || 'General',
+      mode: tutorMode,
       onDelta: upsertAssistant,
       onDone: () => setIsTyping(false),
       onError: (err) => {
@@ -198,6 +224,7 @@ export default function TutorChat({ courseId, courseName, topic, onBack }: Tutor
       messages: apiMessages,
       courseName,
       topic: topic || 'General',
+      mode: tutorMode,
       onDelta: upsertAssistant,
       onDone: () => setIsTyping(false),
       onError: (err) => {
@@ -205,7 +232,7 @@ export default function TutorChat({ courseId, courseName, topic, onBack }: Tutor
         toast.error(err);
       },
     });
-  }, [input, isTyping, messages, courseName, topic]);
+  }, [input, isTyping, messages, courseName, topic, tutorMode]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -228,16 +255,54 @@ export default function TutorChat({ courseId, courseName, topic, onBack }: Tutor
             <p className="text-xs text-muted-foreground truncate">{topic || 'Tema general'}</p>
           </div>
           <div className="flex items-center gap-2">
+            {/* Mode Selector */}
+            <div className="relative" ref={modeMenuRef}>
+              <button
+                onClick={() => setShowModeMenu(!showModeMenu)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:bg-muted/80 rounded-full text-xs font-medium text-foreground transition-colors"
+              >
+                {tutorModes.find(m => m.value === tutorMode)?.icon}
+                <span className="hidden sm:inline">{tutorMode}</span>
+                <ChevronDown size={12} className={cn("transition-transform", showModeMenu && "rotate-180")} />
+              </button>
+              <AnimatePresence>
+                {showModeMenu && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 top-full mt-1.5 w-56 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden"
+                  >
+                    <div className="p-1.5">
+                      {tutorModes.map((mode) => (
+                        <button
+                          key={mode.value}
+                          onClick={() => { setTutorMode(mode.value); setShowModeMenu(false); }}
+                          className={cn(
+                            "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors",
+                            tutorMode === mode.value ? "bg-primary/10 text-primary" : "hover:bg-muted text-foreground"
+                          )}
+                        >
+                          <span className="shrink-0">{mode.icon}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium">{mode.value}</p>
+                            <p className="text-xs text-muted-foreground">{mode.description}</p>
+                          </div>
+                          {tutorMode === mode.value && <Check size={14} className="shrink-0 text-primary" />}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
             <button
               onClick={() => setShowPanel(!showPanel)}
               className="md:hidden p-2 hover:bg-muted rounded-lg transition-colors"
             >
               <BookOpen size={18} />
             </button>
-            <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-success/10 text-success rounded-full text-xs font-medium">
-              <Sparkles size={12} />
-              Tutor activo
-            </div>
           </div>
         </div>
 
