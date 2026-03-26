@@ -255,16 +255,54 @@ export default function TutorChat({ courseId, courseName, topic, onBack }: Tutor
             <p className="text-xs text-muted-foreground truncate">{topic || 'Tema general'}</p>
           </div>
           <div className="flex items-center gap-2">
+            {/* Mode Selector */}
+            <div className="relative" ref={modeMenuRef}>
+              <button
+                onClick={() => setShowModeMenu(!showModeMenu)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:bg-muted/80 rounded-full text-xs font-medium text-foreground transition-colors"
+              >
+                {tutorModes.find(m => m.value === tutorMode)?.icon}
+                <span className="hidden sm:inline">{tutorMode}</span>
+                <ChevronDown size={12} className={cn("transition-transform", showModeMenu && "rotate-180")} />
+              </button>
+              <AnimatePresence>
+                {showModeMenu && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 top-full mt-1.5 w-56 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden"
+                  >
+                    <div className="p-1.5">
+                      {tutorModes.map((mode) => (
+                        <button
+                          key={mode.value}
+                          onClick={() => { setTutorMode(mode.value); setShowModeMenu(false); }}
+                          className={cn(
+                            "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors",
+                            tutorMode === mode.value ? "bg-primary/10 text-primary" : "hover:bg-muted text-foreground"
+                          )}
+                        >
+                          <span className="shrink-0">{mode.icon}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium">{mode.value}</p>
+                            <p className="text-xs text-muted-foreground">{mode.description}</p>
+                          </div>
+                          {tutorMode === mode.value && <Check size={14} className="shrink-0 text-primary" />}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
             <button
               onClick={() => setShowPanel(!showPanel)}
               className="md:hidden p-2 hover:bg-muted rounded-lg transition-colors"
             >
               <BookOpen size={18} />
             </button>
-            <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-success/10 text-success rounded-full text-xs font-medium">
-              <Sparkles size={12} />
-              Tutor activo
-            </div>
           </div>
         </div>
 
