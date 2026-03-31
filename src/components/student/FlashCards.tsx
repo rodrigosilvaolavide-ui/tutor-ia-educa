@@ -1,16 +1,53 @@
 import { useState } from 'react';
-import { ArrowLeft, RotateCcw, CheckCircle, XCircle, MinusCircle, ChevronRight, Zap, Trophy, Flame, Send } from 'lucide-react';
+import { ArrowLeft, RotateCcw, CheckCircle, XCircle, MinusCircle, ChevronRight, Zap, Trophy, Flame, Send, Loader2 } from 'lucide-react';
 import { courses } from '@/lib/mock-data';
-import { mockFlashCards, FlashCard } from '@/lib/gamification';
+import { FlashCard } from '@/lib/gamification';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 type FlashCardMode = 'review' | 'test';
 type SessionSize = 5 | 10 | 15;
-type Phase = 'setup' | 'session' | 'results';
+type Phase = 'setup' | 'loading' | 'session' | 'results';
 
 interface ReviewResult { card: FlashCard; rating: 'knew' | 'partial' | 'didnt_know' }
 interface TestResult { card: FlashCard; answer: string; rating: 'correct' | 'partial' | 'incorrect'; feedback: string }
+
+async function generateFlashCards(courseName: string, topic: string, count: number): Promise<FlashCard[]> {
+  const resp = await fetch(`${SUPABASE_URL}/functions/v1/generate-flashcards`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+    },
+    body: JSON.stringify({ courseName, topic, count }),
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({ error: 'Error de red' }));
+    throw new Error(err.error || 'Error generando tarjetas');
+  }
+  const data = await resp.json();
+  return data.cards;
+}
+
+async function evaluateAnswer(question: string, expectedAnswer: string, studentAnswer: string): Promise<{ rating: 'correct' | 'partial' | 'incorrect'; feedback: string }> {
+  const resp = await fetch(`${SUPABASE_URL}/functions/v1/evaluate-flashcard`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+    },
+    body: JSON.stringify({ question, expectedAnswer, studentAnswer }),
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({ error: 'Error de red' }));
+    throw new Error(err.error || 'Error evaluando respuesta');
+  }
+  return resp.json();
+}
 
 export default function FlashCards() {
   const [phase, setPhase] = useState<Phase>('setup');
@@ -25,23 +62,27 @@ export default function FlashCards() {
   const [testAnswer, setTestAnswer] = useState('');
   const [showFeedback, setShowFeedback] = useState(false);
   const [cards, setCards] = useState<FlashCard[]>([]);
+  const [evaluating, setEvaluating] = useState(false);
 
-  const startSession = () => {
-    const filtered = selectedTopic
-      ? mockFlashCards.filter(c => c.topic === selectedTopic)
-      : mockFlashCards;
-    const shuffled = [...filtered].sort(() => Math.random() - 0.5).slice(0, sessionSize);
-    if (shuffled.length === 0) {
-      // fallback: use all
-      setCards(mockFlashCards.slice(0, sessionSize));
-    } else {
-      setCards(shuffled);
+  const startSession = async () => {
+    const course = courses.find(c => c.id === selectedCourse);
+    if (!course) return;
+
+    setPhase('loading');
+    try {
+      const generated = await generateFlashCards(course.name, selectedTopic, sessionSize);
+      if (generated.length === 0) throw new Error('No se generaron tarjetas');
+      setCards(generated);
+      setCurrentIndex(0);
+      setFlipped(false);
+      setReviewResults([]);
+      setTestResults([]);
+      setPhase('session');
+    } catch (e) {
+      console.error(e);
+      toast.error(e instanceof Error ? e.message : 'Error generando tarjetas');
+      setPhase('setup');
     }
-    setCurrentIndex(0);
-    setFlipped(false);
-    setReviewResults([]);
-    setTestResults([]);
-    setPhase('session');
   };
 
   const handleReviewRate = (rating: 'knew' | 'partial' | 'didnt_know') => {
@@ -49,15 +90,28 @@ export default function FlashCards() {
     nextCard();
   };
 
-  const handleTestSubmit = () => {
-    if (!testAnswer.trim()) return;
-    // Simple mock evaluation
-    const correct = testAnswer.toLowerCase().includes(cards[currentIndex].answer.toLowerCase().slice(0, 10));
-    const rating = correct ? 'correct' : testAnswer.length > 15 ? 'partial' : 'incorrect';
-    const feedback = rating === 'correct' ? '¡Correcto! Bien hecho.' : rating === 'partial' ? 'Parcialmente correcto. Revisa los detalles.' : 'Incorrecto. Revisa la respuesta correcta.';
-    setTestResults(prev => [...prev, { card: cards[currentIndex], answer: testAnswer, rating: rating as 'correct' | 'partial' | 'incorrect', feedback }]);
-    setShowFeedback(true);
-    setTestAnswer('');
+  const handleTestSubmit = async () => {
+    if (!testAnswer.trim() || evaluating) return;
+    const card = cards[currentIndex];
+
+    setEvaluating(true);
+    try {
+      const result = await evaluateAnswer(card.question, card.answer, testAnswer);
+      setTestResults(prev => [...prev, { card, answer: testAnswer, rating: result.rating, feedback: result.feedback }]);
+      setShowFeedback(true);
+      setTestAnswer('');
+    } catch (e) {
+      console.error(e);
+      // Fallback to simple local evaluation
+      const correct = testAnswer.toLowerCase().includes(card.answer.toLowerCase().slice(0, 10));
+      const rating = correct ? 'correct' : testAnswer.length > 15 ? 'partial' : 'incorrect';
+      const feedback = rating === 'correct' ? '¡Correcto! Bien hecho.' : rating === 'partial' ? 'Parcialmente correcto. Revisa los detalles.' : 'Incorrecto. Revisa la respuesta correcta.';
+      setTestResults(prev => [...prev, { card, answer: testAnswer, rating, feedback }]);
+      setShowFeedback(true);
+      setTestAnswer('');
+    } finally {
+      setEvaluating(false);
+    }
   };
 
   const nextCard = () => {
@@ -84,6 +138,19 @@ export default function FlashCards() {
     const incorrect = testResults.filter(r => r.rating === 'incorrect').length;
     return { knew: correct, partial, didntKnow: incorrect, total: testResults.length, accuracy: Math.round(((correct + partial * 0.5) / testResults.length) * 100) };
   };
+
+  // LOADING
+  if (phase === 'loading') {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4 animate-fade-in">
+        <Loader2 size={36} className="text-primary animate-spin" />
+        <div className="text-center">
+          <p className="text-lg font-medium text-foreground">Generando tarjetas con IA...</p>
+          <p className="text-sm text-muted-foreground mt-1">Creando {sessionSize} preguntas personalizadas</p>
+        </div>
+      </div>
+    );
+  }
 
   // SETUP
   if (phase === 'setup') {
@@ -232,11 +299,12 @@ export default function FlashCards() {
                     onChange={e => setTestAnswer(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleTestSubmit()}
                     placeholder="Escribe tu respuesta..."
-                    className="flex-1 px-4 py-3 bg-card border border-border rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                    disabled={evaluating}
+                    className="flex-1 px-4 py-3 bg-card border border-border rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
                   />
-                  <button onClick={handleTestSubmit} disabled={!testAnswer.trim()}
+                  <button onClick={handleTestSubmit} disabled={!testAnswer.trim() || evaluating}
                     className="px-4 py-3 bg-primary text-primary-foreground rounded-xl disabled:opacity-40">
-                    <Send size={16} />
+                    {evaluating ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                   </button>
                 </div>
               )}
