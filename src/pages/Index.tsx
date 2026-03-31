@@ -4,8 +4,10 @@ import AppLayout from '@/components/layout/AppLayout';
 import StudentHome from '@/components/student/StudentHome';
 import CourseSelect from '@/components/student/CourseSelect';
 import TutorChat from '@/components/student/TutorChat';
-import StudentProgress from '@/components/student/StudentProgress';
-import ChatHistory from '@/components/student/ChatHistory';
+import FlashCards from '@/components/student/FlashCards';
+import Simulacros from '@/components/student/Simulacros';
+import MyClass from '@/components/student/MyClass';
+import StudentProfile from '@/components/student/StudentProfile';
 import TeacherView from '@/components/teacher/TeacherView';
 import DirectorView from '@/components/director/DirectorView';
 import { ChatSession } from '@/lib/chat-storage';
@@ -30,7 +32,7 @@ function AppContent() {
       setSelectingCourse(undefined);
     }
     setShowCourseSelect(true);
-    setCurrentView('study');
+    setCurrentView('tutor');
   };
 
   const handleSelectCourse = (courseId: string, courseName: string, topic?: string) => {
@@ -45,7 +47,7 @@ function AppContent() {
       topic: session.topic,
       session,
     });
-    setCurrentView('study');
+    setCurrentView('tutor');
   };
 
   const renderContent = () => {
@@ -61,15 +63,7 @@ function AppContent() {
           />
         );
       }
-      if (currentView === 'history') {
-        return (
-          <ChatHistory
-            onBack={() => setCurrentView('home')}
-            onResumeSession={handleResumeSession}
-          />
-        );
-      }
-      if (currentView === 'study' || showCourseSelect) {
+      if (currentView === 'tutor' || showCourseSelect) {
         return (
           <CourseSelect
             onSelectCourse={handleSelectCourse}
@@ -78,10 +72,11 @@ function AppContent() {
           />
         );
       }
-      if (currentView === 'progress') {
-        return <StudentProgress />;
-      }
-      return <StudentHome onStartStudy={handleStartStudy} />;
+      if (currentView === 'flashcards') return <FlashCards />;
+      if (currentView === 'simulacros') return <Simulacros />;
+      if (currentView === 'myclass') return <MyClass />;
+      if (currentView === 'profile') return <StudentProfile />;
+      return <StudentHome onStartStudy={handleStartStudy} onNavigate={handleNavigate} />;
     }
 
     if (role === 'profesor') {
