@@ -1,16 +1,48 @@
 import { useState } from 'react';
 import { courses } from '@/lib/mock-data';
-import { mockSimulacroQuestions, SimulacroQuestion, topicMastery, getMasteryLevel, masteryLabels } from '@/lib/gamification';
-import { ArrowLeft, ChevronRight, CheckCircle, XCircle, Clock, Target, TrendingUp, AlertTriangle, BookOpen, Zap } from 'lucide-react';
+import { SimulacroQuestion } from '@/lib/gamification';
+import { ChevronRight, CheckCircle, XCircle, Clock, Target, TrendingUp, AlertTriangle, Zap, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
-type Phase = 'setup' | 'session' | 'results';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+type Phase = 'setup' | 'loading' | 'session' | 'results';
 
 interface Answer {
   questionId: string;
   answer: string;
   correct: boolean;
+  feedback?: string;
+}
+
+async function generateSimulacro(courseName: string, topic: string, count: number): Promise<SimulacroQuestion[]> {
+  const resp = await fetch(`${SUPABASE_URL}/functions/v1/generate-simulacro`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SUPABASE_KEY}` },
+    body: JSON.stringify({ courseName, topic, count }),
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({ error: 'Error de red' }));
+    throw new Error(err.error || 'Error generando simulacro');
+  }
+  const data = await resp.json();
+  return data.questions;
+}
+
+async function evaluateShortAnswer(question: string, correctAnswer: string, studentAnswer: string): Promise<{ correct: boolean; feedback: string }> {
+  const resp = await fetch(`${SUPABASE_URL}/functions/v1/evaluate-simulacro`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SUPABASE_KEY}` },
+    body: JSON.stringify({ question, correctAnswer, studentAnswer }),
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({ error: 'Error de red' }));
+    throw new Error(err.error || 'Error evaluando respuesta');
+  }
+  return resp.json();
 }
 
 export default function Simulacros() {
@@ -24,33 +56,56 @@ export default function Simulacros() {
   const [shortAnswer, setShortAnswer] = useState('');
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [endTime, setEndTime] = useState<Date | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const startSimulacro = () => {
-    const filtered = selectedTopic
-      ? mockSimulacroQuestions.filter(q => q.topic === selectedTopic)
-      : mockSimulacroQuestions;
-    const shuffled = [...filtered].sort(() => Math.random() - 0.5).slice(0, 8);
-    setQuestions(shuffled.length > 0 ? shuffled : mockSimulacroQuestions.slice(0, 8));
-    setCurrentIndex(0);
-    setAnswers([]);
-    setStartTime(new Date());
-    setPhase('session');
+  const startSimulacro = async () => {
+    const course = courses.find(c => c.id === selectedCourse);
+    if (!course) return;
+
+    setPhase('loading');
+    try {
+      const generated = await generateSimulacro(course.name, selectedTopic, 8);
+      if (generated.length === 0) throw new Error('No se generaron preguntas');
+      setQuestions(generated);
+      setCurrentIndex(0);
+      setAnswers([]);
+      setStartTime(new Date());
+      setPhase('session');
+    } catch (e) {
+      console.error(e);
+      toast.error(e instanceof Error ? e.message : 'Error generando simulacro');
+      setPhase('setup');
+    }
   };
 
-  const submitAnswer = () => {
+  const submitAnswer = async () => {
+    if (submitting) return;
     const q = questions[currentIndex];
     let answer = '';
     let correct = false;
+    let feedback = '';
 
     if (q.type === 'multiple_choice') {
       answer = selectedOption;
       correct = selectedOption === q.correctAnswer;
+      feedback = correct ? '¡Correcto!' : `La respuesta correcta era: ${q.correctAnswer}`;
     } else {
       answer = shortAnswer;
-      correct = shortAnswer.toLowerCase().includes(q.correctAnswer.toLowerCase().slice(0, 8));
+      setSubmitting(true);
+      try {
+        const result = await evaluateShortAnswer(q.question, q.correctAnswer, shortAnswer);
+        correct = result.correct;
+        feedback = result.feedback;
+      } catch {
+        // Fallback local
+        correct = shortAnswer.toLowerCase().includes(q.correctAnswer.toLowerCase().slice(0, 8));
+        feedback = correct ? '¡Correcto!' : 'Revisa la respuesta correcta.';
+      } finally {
+        setSubmitting(false);
+      }
     }
 
-    setAnswers(prev => [...prev, { questionId: q.id, answer, correct }]);
+    setAnswers(prev => [...prev, { questionId: q.id, answer, correct, feedback }]);
     setSelectedOption('');
     setShortAnswer('');
 
@@ -63,6 +118,19 @@ export default function Simulacros() {
   };
 
   const progress = questions.length > 0 ? ((currentIndex + (phase === 'results' ? 1 : 0)) / questions.length) * 100 : 0;
+
+  // LOADING
+  if (phase === 'loading') {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4 animate-fade-in">
+        <Loader2 size={36} className="text-primary animate-spin" />
+        <div className="text-center">
+          <p className="text-lg font-medium text-foreground">Preparando tu simulacro...</p>
+          <p className="text-sm text-muted-foreground mt-1">Generando preguntas personalizadas con IA</p>
+        </div>
+      </div>
+    );
+  }
 
   // SETUP
   if (phase === 'setup') {
@@ -106,16 +174,16 @@ export default function Simulacros() {
             </div>
           )}
 
-          {/* Info */}
           <div className="stat-card bg-primary/5 border-primary/20">
             <div className="flex items-center gap-2 mb-2">
               <Target size={16} className="text-primary" />
               <p className="text-sm font-medium text-foreground">¿Cómo funciona?</p>
             </div>
             <ul className="space-y-1 text-xs text-muted-foreground">
+              <li>• La IA genera preguntas únicas cada vez</li>
               <li>• Preguntas de opción múltiple y respuesta corta</li>
+              <li>• Las respuestas de desarrollo se evalúan con IA</li>
               <li>• Al final verás tu nivel de preparación</li>
-              <li>• Los resultados alimentan tu progreso y dominio por tema</li>
             </ul>
           </div>
 
@@ -171,13 +239,18 @@ export default function Simulacros() {
               {q.type === 'short_answer' && (
                 <textarea value={shortAnswer} onChange={e => setShortAnswer(e.target.value)}
                   placeholder="Escribe tu respuesta..."
+                  disabled={submitting}
                   rows={3}
-                  className="w-full px-4 py-3 bg-card border border-border rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
+                  className="w-full px-4 py-3 bg-card border border-border rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 resize-none disabled:opacity-50" />
               )}
 
-              <button onClick={submitAnswer} disabled={!canSubmit}
+              <button onClick={submitAnswer} disabled={!canSubmit || submitting}
                 className="w-full py-3 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 disabled:opacity-40 flex items-center justify-center gap-2">
-                {currentIndex + 1 >= questions.length ? 'Finalizar' : 'Siguiente'} <ChevronRight size={16} />
+                {submitting ? (
+                  <><Loader2 size={16} className="animate-spin" /> Evaluando...</>
+                ) : (
+                  <>{currentIndex + 1 >= questions.length ? 'Finalizar' : 'Siguiente'} <ChevronRight size={16} /></>
+                )}
               </button>
             </motion.div>
           </AnimatePresence>
@@ -199,7 +272,6 @@ export default function Simulacros() {
   };
   const readiness = readinessConfig[readinessLevel];
 
-  // Topic breakdown
   const topicBreakdown: Record<string, { correct: number; total: number }> = {};
   questions.forEach((q, i) => {
     if (!topicBreakdown[q.topic]) topicBreakdown[q.topic] = { correct: 0, total: 0 };
@@ -218,7 +290,6 @@ export default function Simulacros() {
         <p className="text-muted-foreground mt-1">Simulacro completado · {duration} min</p>
       </div>
 
-      {/* Score */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="stat-card text-center">
           <p className={cn('text-2xl font-bold font-heading', readiness.color)}>{score}%</p>
@@ -237,7 +308,6 @@ export default function Simulacros() {
         </div>
       </div>
 
-      {/* Topic breakdown */}
       <div className="stat-card mb-6">
         <h3 className="text-sm font-medium text-foreground mb-3">Desempeño por tema</h3>
         <div className="space-y-3">
@@ -259,7 +329,28 @@ export default function Simulacros() {
         </div>
       </div>
 
-      {/* Recommendation */}
+      {/* Answer review */}
+      <div className="stat-card mb-6">
+        <h3 className="text-sm font-medium text-foreground mb-3">Revisión de respuestas</h3>
+        <div className="space-y-3">
+          {questions.map((q, i) => {
+            const a = answers[i];
+            if (!a) return null;
+            return (
+              <div key={q.id} className={cn('p-3 rounded-lg border text-sm', a.correct ? 'border-success/20 bg-success/5' : 'border-destructive/20 bg-destructive/5')}>
+                <div className="flex items-start gap-2">
+                  {a.correct ? <CheckCircle size={14} className="text-success mt-0.5 shrink-0" /> : <XCircle size={14} className="text-destructive mt-0.5 shrink-0" />}
+                  <div className="min-w-0">
+                    <p className="text-foreground font-medium text-xs">{q.question}</p>
+                    {a.feedback && <p className="text-muted-foreground text-xs mt-1">{a.feedback}</p>}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="stat-card border-primary/20 bg-primary/5 mb-6">
         <div className="flex items-center gap-2 mb-2">
           <Zap size={14} className="text-primary" />
@@ -269,12 +360,11 @@ export default function Simulacros() {
           {readinessLevel === 'ready'
             ? '¡Excelente preparación! Mantén tu racha y sigue practicando para consolidar tu dominio.'
             : readinessLevel === 'almost'
-            ? `Estás casi listo. Refuerza los temas con menor puntaje usando Flash Cards o el Tutor AI.`
+            ? 'Estás casi listo. Refuerza los temas con menor puntaje usando Flash Cards o el Tutor AI.'
             : 'Necesitas dedicar más tiempo a estos temas. Te recomendamos estudiar con el Tutor AI y practicar con Flash Cards antes de volver a intentarlo.'}
         </p>
       </div>
 
-      {/* Actions */}
       <div className="space-y-3">
         <button onClick={() => { setPhase('setup'); setCurrentIndex(0); setAnswers([]); }}
           className="w-full py-3 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:bg-primary/90">
