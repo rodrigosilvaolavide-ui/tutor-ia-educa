@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { useRole } from '@/contexts/RoleContext';
 import { UserRole } from '@/lib/types';
 import {
-  BookOpen, GraduationCap, BarChart3, Users, FileText,
-  LayoutDashboard, ChevronDown, Sparkles, Menu, X, MessageSquare
+  BookOpen, BarChart3, Users,
+  LayoutDashboard, ChevronDown, Sparkles, Menu, X,
+  Layers, FileText, GraduationCap, User, Zap, Target
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -16,9 +17,11 @@ interface NavItem {
 const navByRole: Record<UserRole, NavItem[]> = {
   alumno: [
     { label: 'Inicio', id: 'home', icon: <LayoutDashboard size={20} /> },
-    { label: 'Estudiar', id: 'study', icon: <BookOpen size={20} /> },
-    { label: 'Historial', id: 'history', icon: <MessageSquare size={20} /> },
-    { label: 'Mi progreso', id: 'progress', icon: <BarChart3 size={20} /> },
+    { label: 'Tutor AI', id: 'tutor', icon: <Sparkles size={20} /> },
+    { label: 'Flash Cards', id: 'flashcards', icon: <Layers size={20} /> },
+    { label: 'Simulacros', id: 'simulacros', icon: <Target size={20} /> },
+    { label: 'Mi Clase', id: 'myclass', icon: <Users size={20} /> },
+    { label: 'Perfil', id: 'profile', icon: <User size={20} /> },
   ],
   profesor: [
     { label: 'Dashboard', id: 'home', icon: <LayoutDashboard size={20} /> },
