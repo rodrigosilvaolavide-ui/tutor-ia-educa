@@ -49,12 +49,14 @@ export default function TeacherView({ activeTab, onTabChange }: TeacherViewProps
         </div>
       </div>
 
-      {/* Stats — removed "Contenido subido" */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {[
           { label: 'Alumnos activos', value: `${mockStudents.length}`, sub: 'de 126 totales', icon: <Users size={18} />, color: 'text-primary' },
           { label: 'Sesiones esta semana', value: '87', sub: '+12% vs. semana pasada', icon: <TrendingUp size={18} />, color: 'text-success' },
           { label: 'Tiempo promedio', value: '22 min', sub: 'por sesión', icon: <Clock size={18} />, color: 'text-warning' },
+          { label: 'Flash Cards', value: `${mockStudents.reduce((a, s) => a + s.flashcards.completed, 0)}`, sub: `${Math.round(mockStudents.reduce((a, s) => a + s.flashcards.accuracy, 0) / mockStudents.length)}% precisión prom.`, icon: <Layers size={18} />, color: 'text-info' },
+          { label: 'Simulacros', value: `${mockStudents.reduce((a, s) => a + s.simulacros.completed, 0)}`, sub: `${Math.round(mockStudents.reduce((a, s) => a + s.simulacros.avgScore, 0) / mockStudents.filter(s => s.simulacros.completed > 0).length)}% score prom.`, icon: <Target size={18} />, color: 'text-destructive' },
         ].map(s => (
           <div key={s.label} className="stat-card">
             <div className={`${s.color} mb-2`}>{s.icon}</div>
