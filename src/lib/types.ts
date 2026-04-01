@@ -82,4 +82,6 @@ export interface SectionData {
   engagement: number;
   weakTopics: string[];
   topCourses: string[];
+  flashcards: { totalSessions: number; avgAccuracy: number; activeUsers: number };
+  simulacros: { totalCompleted: number; avgScore: number; readyPct: number };
 }
