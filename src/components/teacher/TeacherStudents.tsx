@@ -214,17 +214,20 @@ export default function TeacherStudents({ onBack, initialStudentId, onClearStude
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {[
             { label: 'Tiempo de estudio', value: `${Math.round(student.studyTime / 60)}h ${student.studyTime % 60}m`, icon: <Clock size={16} /> },
             { label: 'Sesiones', value: student.sessionsCount.toString(), icon: <BookOpen size={16} /> },
             { label: 'Temas estudiados', value: student.topicsStudied.toString(), icon: <TrendingUp size={16} /> },
             { label: 'Dominio estimado', value: `${student.mastery}%`, icon: <Sparkles size={16} /> },
+            { label: 'Flash Cards', value: `${student.flashcards.completed} sesiones`, icon: <Layers size={16} />, sub: `${student.flashcards.accuracy}% precisión · racha ${student.flashcards.streak}d` },
+            { label: 'Simulacros', value: `${student.simulacros.completed} completados`, icon: <Target size={16} />, sub: `${student.simulacros.avgScore}% score prom.` },
           ].map(s => (
             <div key={s.label} className="stat-card">
               <div className="text-primary mb-1">{s.icon}</div>
               <p className="text-lg font-bold font-heading text-foreground">{s.value}</p>
               <p className="text-xs text-muted-foreground">{s.label}</p>
+              {'sub' in s && s.sub && <p className="text-xs text-muted-foreground mt-0.5">{s.sub}</p>}
             </div>
           ))}
         </div>
