@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Users, BarChart3, Clock, TrendingUp, Sparkles, Calendar } from 'lucide-react';
+import { Users, BarChart3, Clock, TrendingUp, Sparkles, Calendar, Layers, Target } from 'lucide-react';
 import { mockStudents, mockSections } from '@/lib/mock-data';
 import TeacherContent from './TeacherContent';
 import TeacherStudents from './TeacherStudents';
@@ -49,12 +49,14 @@ export default function TeacherView({ activeTab, onTabChange }: TeacherViewProps
         </div>
       </div>
 
-      {/* Stats — removed "Contenido subido" */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {[
           { label: 'Alumnos activos', value: `${mockStudents.length}`, sub: 'de 126 totales', icon: <Users size={18} />, color: 'text-primary' },
           { label: 'Sesiones esta semana', value: '87', sub: '+12% vs. semana pasada', icon: <TrendingUp size={18} />, color: 'text-success' },
           { label: 'Tiempo promedio', value: '22 min', sub: 'por sesión', icon: <Clock size={18} />, color: 'text-warning' },
+          { label: 'Flash Cards', value: `${mockStudents.reduce((a, s) => a + s.flashcards.completed, 0)}`, sub: `${Math.round(mockStudents.reduce((a, s) => a + s.flashcards.accuracy, 0) / mockStudents.length)}% precisión prom.`, icon: <Layers size={18} />, color: 'text-info' },
+          { label: 'Simulacros', value: `${mockStudents.reduce((a, s) => a + s.simulacros.completed, 0)}`, sub: `${Math.round(mockStudents.reduce((a, s) => a + s.simulacros.avgScore, 0) / mockStudents.filter(s => s.simulacros.completed > 0).length)}% score prom.`, icon: <Target size={18} />, color: 'text-destructive' },
         ].map(s => (
           <div key={s.label} className="stat-card">
             <div className={`${s.color} mb-2`}>{s.icon}</div>
@@ -69,13 +71,16 @@ export default function TeacherView({ activeTab, onTabChange }: TeacherViewProps
       <div className="stat-card border-warning/30 bg-warning/5">
         <div className="flex items-center gap-2 mb-3">
           <Sparkles size={16} className="text-warning" />
-          <h3 className="heading-4 text-foreground">Insights del Tutor AI</h3>
+          <h3 className="heading-4 text-foreground">Insights del Tutor AI, Flash Cards y Simulacros</h3>
         </div>
         <div className="space-y-2">
           {[
             '4 alumnos tienen dificultades con Factorización en 4°A — considera reforzar en clase.',
             'El tema "La célula" tiene alta confusión en la sección 4°B — revisa el material subido.',
             'Sebastián Torres y Mateo García necesitan atención: bajo uso y temas débiles.',
+            'La precisión en Flash Cards de 3°B es solo 52% — los alumnos necesitan más práctica guiada.',
+            'Solo el 22% de 3°B está "listo para rendir" en simulacros — prioriza intervención.',
+            'Camila Mendoza destaca con 94% de precisión en Flash Cards y racha de 12 días.',
           ].map((insight, i) => (
             <p key={i} className="text-sm text-foreground flex items-start gap-2">
               <span className="text-warning mt-0.5">•</span> {insight}

@@ -1,4 +1,4 @@
-import { Sparkles, Download, FileText, TrendingDown, TrendingUp, Users, AlertTriangle } from 'lucide-react';
+import { Sparkles, Download, FileText, TrendingDown, TrendingUp, Users, AlertTriangle, Layers, Target } from 'lucide-react';
 
 interface TeacherReportsProps {
   onBack: () => void;
@@ -10,6 +10,9 @@ const reports = [
   { id: 'r3', title: 'Alumnos que necesitan apoyo', type: 'Por alumno', date: '17 mar 2026', icon: <Users size={16} className="text-info" /> },
   { id: 'r4', title: 'Conceptos con mayor mejora', type: 'Progreso', date: '17 mar 2026', icon: <TrendingUp size={16} className="text-success" /> },
   { id: 'r5', title: 'Prioridades de intervención recomendadas', type: 'Estratégico', date: '17 mar 2026', icon: <Sparkles size={16} className="text-primary" /> },
+  { id: 'r6', title: 'Rendimiento en Flash Cards por sección', type: 'Flash Cards', date: '17 mar 2026', icon: <Layers size={16} className="text-info" /> },
+  { id: 'r7', title: 'Resultados de simulacros y preparación', type: 'Simulacros', date: '17 mar 2026', icon: <Target size={16} className="text-destructive" /> },
+  { id: 'r8', title: 'Temas débiles detectados en simulacros', type: 'Simulacros', date: '17 mar 2026', icon: <Target size={16} className="text-warning" /> },
 ];
 
 export default function TeacherReports({ onBack }: TeacherReportsProps) {
@@ -41,12 +44,20 @@ export default function TeacherReports({ onBack }: TeacherReportsProps) {
             <p className="text-sm text-foreground">La comprensión de Ecuaciones lineales mejoró un 15% en las últimas 2 semanas gracias al uso frecuente del tutor.</p>
           </div>
           <div className="p-3 bg-card rounded-lg">
-            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Acción recomendada</p>
-            <p className="text-sm text-foreground">Contactar a Mateo García y Andrés Castillo — ambos muestran bajo engagement y múltiples temas débiles.</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Flash Cards — Insight</p>
+            <p className="text-sm text-foreground">La sección 3°B tiene solo 52% de precisión en Flash Cards. Los temas con peor rendimiento son Ecuaciones lineales y Textos argumentativos.</p>
           </div>
           <div className="p-3 bg-card rounded-lg">
-            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Próximo paso</p>
-            <p className="text-sm text-foreground">Subir material de refuerzo para Circunferencia (4°A) y La célula (4°B) para mejorar la calidad de tutoría.</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Simulacros — Alerta</p>
+            <p className="text-sm text-foreground">Solo el 22% de 3°B está "Listo para rendir". Se recomienda reforzar temas base antes de evaluar.</p>
+          </div>
+          <div className="p-3 bg-card rounded-lg">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Flash Cards — Positivo</p>
+            <p className="text-sm text-foreground">3°A lidera con 85% de precisión promedio en Flash Cards y 29 de 33 alumnos activos en el módulo.</p>
+          </div>
+          <div className="p-3 bg-card rounded-lg">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Simulacros — Positivo</p>
+            <p className="text-sm text-foreground">70% de alumnos de 3°A están "Listos para rendir" con un score promedio de 79%. La práctica constante da resultados.</p>
           </div>
         </div>
       </div>
@@ -85,6 +96,9 @@ export default function TeacherReports({ onBack }: TeacherReportsProps) {
             { label: 'Reporte por alumno', desc: 'Selecciona un alumno y obtén un resumen detallado' },
             { label: 'Reporte por sección', desc: 'Análisis completo de una sección' },
             { label: 'Reporte por curso', desc: 'Rendimiento general en un curso específico' },
+            { label: 'Reporte de Flash Cards', desc: 'Precisión, temas débiles y progreso por sesión' },
+            { label: 'Reporte de Simulacros', desc: 'Nivel de preparación y temas a reforzar' },
+            { label: 'Reporte comparativo', desc: 'Compara rendimiento entre secciones y herramientas' },
           ].map(r => (
             <button key={r.label} className="text-left p-4 rounded-lg border border-border hover:border-primary/30 hover:bg-primary/5 transition-all">
               <p className="font-medium text-foreground text-sm mb-1">{r.label}</p>
