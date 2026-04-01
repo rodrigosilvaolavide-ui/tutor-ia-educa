@@ -83,10 +83,10 @@ export const mockContent: ContentItem[] = [
 ];
 
 export const mockSections: SectionData[] = [
-  { id: 'sec1', name: '4°A', grade: '4°', activeStudents: 28, totalStudents: 32, avgStudyTime: 245, avgSessionsPerWeek: 3.2, engagement: 87, weakTopics: ['Factorización', 'Circunferencia'], topCourses: ['Matemática', 'Comunicación'] },
-  { id: 'sec2', name: '4°B', grade: '4°', activeStudents: 22, totalStudents: 30, avgStudyTime: 180, avgSessionsPerWeek: 2.4, engagement: 73, weakTopics: ['Triángulos', 'La célula'], topCourses: ['Ciencia y Tecnología', 'Historia'] },
-  { id: 'sec3', name: '3°A', grade: '3°', activeStudents: 30, totalStudents: 33, avgStudyTime: 290, avgSessionsPerWeek: 3.8, engagement: 91, weakTopics: ['Ecuaciones lineales'], topCourses: ['Matemática', 'Comunicación'] },
-  { id: 'sec4', name: '3°B', grade: '3°', activeStudents: 18, totalStudents: 31, avgStudyTime: 120, avgSessionsPerWeek: 1.6, engagement: 58, weakTopics: ['Múltiples temas'], topCourses: ['Comunicación'] },
+  { id: 'sec1', name: '4°A', grade: '4°', activeStudents: 28, totalStudents: 32, avgStudyTime: 245, avgSessionsPerWeek: 3.2, engagement: 87, weakTopics: ['Factorización', 'Circunferencia'], topCourses: ['Matemática', 'Comunicación'], flashcards: { totalSessions: 125, avgAccuracy: 81, activeUsers: 26 }, simulacros: { totalCompleted: 52, avgScore: 74, readyPct: 62 } },
+  { id: 'sec2', name: '4°B', grade: '4°', activeStudents: 22, totalStudents: 30, avgStudyTime: 180, avgSessionsPerWeek: 2.4, engagement: 73, weakTopics: ['Triángulos', 'La célula'], topCourses: ['Ciencia y Tecnología', 'Historia'], flashcards: { totalSessions: 78, avgAccuracy: 68, activeUsers: 18 }, simulacros: { totalCompleted: 30, avgScore: 61, readyPct: 40 } },
+  { id: 'sec3', name: '3°A', grade: '3°', activeStudents: 30, totalStudents: 33, avgStudyTime: 290, avgSessionsPerWeek: 3.8, engagement: 91, weakTopics: ['Ecuaciones lineales'], topCourses: ['Matemática', 'Comunicación'], flashcards: { totalSessions: 145, avgAccuracy: 85, activeUsers: 29 }, simulacros: { totalCompleted: 64, avgScore: 79, readyPct: 70 } },
+  { id: 'sec4', name: '3°B', grade: '3°', activeStudents: 18, totalStudents: 31, avgStudyTime: 120, avgSessionsPerWeek: 1.6, engagement: 58, weakTopics: ['Múltiples temas'], topCourses: ['Comunicación'], flashcards: { totalSessions: 32, avgAccuracy: 52, activeUsers: 12 }, simulacros: { totalCompleted: 14, avgScore: 48, readyPct: 22 } },
 ];
 
 export const sampleChatMessages: ChatMessage[] = [
