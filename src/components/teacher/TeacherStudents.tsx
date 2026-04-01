@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { mockStudents } from '@/lib/mock-data';
-import { Search, Filter, ArrowLeft, Clock, BookOpen, TrendingUp, AlertTriangle, Sparkles, MessageSquare, X, ChevronRight, ExternalLink } from 'lucide-react';
+import { Search, Filter, ArrowLeft, Clock, BookOpen, TrendingUp, AlertTriangle, Sparkles, MessageSquare, X, ChevronRight, ExternalLink, Layers, Target } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
