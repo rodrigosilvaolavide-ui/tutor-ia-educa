@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Users, BarChart3, Clock, TrendingUp, Sparkles, Calendar } from 'lucide-react';
+import { Users, BarChart3, Clock, TrendingUp, Sparkles, Calendar, Layers, Target } from 'lucide-react';
 import { mockStudents, mockSections } from '@/lib/mock-data';
 import TeacherContent from './TeacherContent';
 import TeacherStudents from './TeacherStudents';
