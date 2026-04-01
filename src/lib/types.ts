@@ -53,6 +53,8 @@ export interface StudentData {
   needsAttention: boolean;
   weakTopics: string[];
   strongTopics: string[];
+  flashcards: { completed: number; accuracy: number; streak: number };
+  simulacros: { completed: number; avgScore: number; readiness: 'ready' | 'almost' | 'needs_work' };
 }
 
 export interface ContentItem {
