@@ -71,13 +71,16 @@ export default function TeacherView({ activeTab, onTabChange }: TeacherViewProps
       <div className="stat-card border-warning/30 bg-warning/5">
         <div className="flex items-center gap-2 mb-3">
           <Sparkles size={16} className="text-warning" />
-          <h3 className="heading-4 text-foreground">Insights del Tutor AI</h3>
+          <h3 className="heading-4 text-foreground">Insights del Tutor AI, Flash Cards y Simulacros</h3>
         </div>
         <div className="space-y-2">
           {[
             '4 alumnos tienen dificultades con Factorización en 4°A — considera reforzar en clase.',
             'El tema "La célula" tiene alta confusión en la sección 4°B — revisa el material subido.',
             'Sebastián Torres y Mateo García necesitan atención: bajo uso y temas débiles.',
+            'La precisión en Flash Cards de 3°B es solo 52% — los alumnos necesitan más práctica guiada.',
+            'Solo el 22% de 3°B está "listo para rendir" en simulacros — prioriza intervención.',
+            'Camila Mendoza destaca con 94% de precisión en Flash Cards y racha de 12 días.',
           ].map((insight, i) => (
             <p key={i} className="text-sm text-foreground flex items-start gap-2">
               <span className="text-warning mt-0.5">•</span> {insight}

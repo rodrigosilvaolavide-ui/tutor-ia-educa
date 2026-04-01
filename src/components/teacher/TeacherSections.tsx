@@ -87,6 +87,28 @@ export default function TeacherSections({ onBack }: TeacherSectionsProps) {
                 ))}
               </div>
 
+              {/* Flash Cards & Simulacros stats */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 bg-info/5 rounded-lg border border-info/10">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Layers size={12} className="text-info" />
+                    <p className="text-xs font-medium text-info">Flash Cards</p>
+                  </div>
+                  <p className="text-lg font-bold font-heading text-foreground">{sec.flashcards.totalSessions}</p>
+                  <p className="text-xs text-muted-foreground">sesiones · {sec.flashcards.avgAccuracy}% precisión</p>
+                  <p className="text-xs text-muted-foreground">{sec.flashcards.activeUsers} alumnos activos</p>
+                </div>
+                <div className="p-3 bg-destructive/5 rounded-lg border border-destructive/10">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Target size={12} className="text-destructive" />
+                    <p className="text-xs font-medium text-destructive">Simulacros</p>
+                  </div>
+                  <p className="text-lg font-bold font-heading text-foreground">{sec.simulacros.totalCompleted}</p>
+                  <p className="text-xs text-muted-foreground">completados · {sec.simulacros.avgScore}% prom.</p>
+                  <p className="text-xs text-muted-foreground">{sec.simulacros.readyPct}% listos para rendir</p>
+                </div>
+              </div>
+
               {sec.weakTopics.length > 0 && (
                 <div>
                   <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Temas débiles</p>

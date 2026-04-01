@@ -319,6 +319,32 @@ export default function TeacherStudents({ onBack, initialStudentId, onClearStude
               : ` El alumno demuestra buen aprovechamiento de la herramienta. Se sugiere desafiar con temas de mayor complejidad.`
             }
           </p>
+          <div className="mt-3 grid md:grid-cols-2 gap-3">
+            <div className="p-3 bg-card rounded-lg">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Flash Cards</p>
+              <p className="text-sm text-foreground">
+                {student.flashcards.accuracy >= 80
+                  ? `Excelente precisión (${student.flashcards.accuracy}%). Demuestra buen dominio en las sesiones de práctica.`
+                  : student.flashcards.accuracy >= 60
+                  ? `Precisión moderada (${student.flashcards.accuracy}%). Podría beneficiarse de más sesiones de repaso.`
+                  : `Precisión baja (${student.flashcards.accuracy}%). Necesita reforzar conceptos base antes de evaluar.`
+                }
+              </p>
+            </div>
+            <div className="p-3 bg-card rounded-lg">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Simulacros</p>
+              <p className="text-sm text-foreground">
+                {student.simulacros.completed === 0
+                  ? 'No ha completado simulacros aún. Motivar su uso para medir preparación.'
+                  : student.simulacros.readiness === 'ready'
+                  ? `Listo para rendir (${student.simulacros.avgScore}% prom.). Buen nivel de preparación.`
+                  : student.simulacros.readiness === 'almost'
+                  ? `Casi listo (${student.simulacros.avgScore}% prom.). Necesita reforzar algunos temas.`
+                  : `Necesita reforzar (${student.simulacros.avgScore}% prom.). Recomendar estudio guiado.`
+                }
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Recent sessions — clickable */}
