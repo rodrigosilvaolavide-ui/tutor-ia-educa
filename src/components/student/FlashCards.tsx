@@ -81,6 +81,8 @@ export default function FlashCards() {
       setFlipped(false);
       setReviewResults([]);
       setTestResults([]);
+      setMastery(initMastery(generated.length));
+      setCardMasteryMap({});
       setPhase('session');
     } catch (e) {
       console.error(e);
@@ -90,7 +92,11 @@ export default function FlashCards() {
   };
 
   const handleReviewRate = (rating: 'knew' | 'partial' | 'didnt_know') => {
-    setReviewResults(prev => [...prev, { card: cards[currentIndex], rating }]);
+    const card = cards[currentIndex];
+    setReviewResults(prev => [...prev, { card, rating }]);
+    const updated = updateCardMastery(card.id, rating, cardMasteryMap, mastery);
+    setMastery(updated.mastery);
+    setCardMasteryMap(updated.cardMap);
     nextCard();
   };
 
