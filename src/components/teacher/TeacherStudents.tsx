@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { mockStudents } from '@/lib/mock-data';
-import { Search, Filter, ArrowLeft, Clock, BookOpen, TrendingUp, AlertTriangle, Sparkles, MessageSquare, X, ChevronRight, ChevronDown, ExternalLink, Layers, Target, MessageCircleQuestion } from 'lucide-react';
+import { Search, Filter, ArrowLeft, Clock, BookOpen, TrendingUp, AlertTriangle, Sparkles, MessageSquare, X, ChevronRight, ChevronDown, ExternalLink, Layers, Target, MessageCircleQuestion, StickyNote, CheckCircle, XCircle } from 'lucide-react';
 import { getConfusionSignals } from '@/lib/confusion-signals';
+import { getNotesTrackingRecords } from '@/lib/notes-tracking';
 import { cn } from '@/lib/utils';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -426,6 +427,47 @@ export default function TeacherStudents({ onBack, initialStudentId, onClearStude
                       {s.question && <p className="text-xs text-muted-foreground mt-0.5 truncate">Pregunta: {s.question}</p>}
                       <p className="text-xs text-muted-foreground mt-0.5">{s.courseName} · {s.topic} · {new Date(s.timestamp).toLocaleDateString('es-PE', { day: 'numeric', month: 'short' })}</p>
                     </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Notes Reading Tracking */}
+        {(() => {
+          const records = getNotesTrackingRecords();
+          if (records.length === 0) return null;
+          const readFirst = records.filter(r => r.readNotesFirst).length;
+          const total = records.length;
+          return (
+            <div className="stat-card border-primary/20 bg-primary/5">
+              <div className="flex items-center gap-2 mb-3">
+                <StickyNote size={16} className="text-primary" />
+                <h3 className="heading-4 text-foreground">Lectura de notas antes de practicar</h3>
+              </div>
+              <div className="flex items-center gap-4 mb-3">
+                <div className="flex items-center gap-1.5 text-sm">
+                  {readFirst > total / 2 ? (
+                    <CheckCircle size={14} className="text-mastery-green" />
+                  ) : (
+                    <XCircle size={14} className="text-mastery-orange" />
+                  )}
+                  <span className="font-medium text-foreground">{readFirst}/{total} temas</span>
+                  <span className="text-muted-foreground text-xs">leyó notas primero</span>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                {records.slice(0, 5).map(r => (
+                  <div key={r.id} className="flex items-center gap-2 text-xs px-3 py-1.5 bg-card rounded-lg">
+                    {r.readNotesFirst ? (
+                      <CheckCircle size={12} className="text-mastery-green shrink-0" />
+                    ) : (
+                      <XCircle size={12} className="text-mastery-orange shrink-0" />
+                    )}
+                    <span className="text-foreground flex-1">{r.topic}</span>
+                    <span className="text-muted-foreground">{r.courseName}</span>
+                    <span className="text-muted-foreground">{r.readNotesFirst ? 'Sí' : 'No'}</span>
                   </div>
                 ))}
               </div>
