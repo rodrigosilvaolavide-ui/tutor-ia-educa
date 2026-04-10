@@ -267,9 +267,7 @@ export default function TutorChat({ courseId, courseName, topic, onBack, existin
 
   return (
     <div className="flex h-full">
-      {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Header with Tabs */}
         <div className="border-b border-border bg-card">
           <div className="flex items-center gap-3 px-4 md:px-6 py-3">
             <button onClick={onBack} className="p-1.5 hover:bg-muted rounded-lg transition-colors">
@@ -280,17 +278,218 @@ export default function TutorChat({ courseId, courseName, topic, onBack, existin
               <p className="text-xs text-muted-foreground truncate">{topic || 'Tema general'}</p>
             </div>
             <div className="flex items-center gap-2">
-              {/* Mode Selector - only show on chat tab */}
               {activeTab === 'chat' && (
+                <div className="relative" ref={modeMenuRef}>
+                  <button
+                    onClick={() => setShowModeMenu(!showModeMenu)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:bg-muted/80 rounded-full text-xs font-medium text-foreground transition-colors"
+                  >
+                    {tutorModes.find(m => m.value === tutorMode)?.icon}
+                    <span className="hidden sm:inline">{tutorMode}</span>
+                    <ChevronDown size={12} className={cn("transition-transform", showModeMenu && "rotate-180")} />
+                  </button>
+                  <AnimatePresence>
+                    {showModeMenu && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 top-full mt-1.5 w-56 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden"
+                      >
+                        <div className="p-1.5">
+                          {tutorModes.map((mode) => (
+                            <button
+                              key={mode.value}
+                              onClick={() => { setTutorMode(mode.value); setShowModeMenu(false); }}
+                              className={cn(
+                                "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors",
+                                tutorMode === mode.value ? "bg-primary/10 text-primary" : "hover:bg-muted text-foreground"
+                              )}
+                            >
+                              <span className="shrink-0">{mode.icon}</span>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium">{mode.value}</p>
+                                <p className="text-xs text-muted-foreground">{mode.description}</p>
+                              </div>
+                              {tutorMode === mode.value && <Check size={14} className="shrink-0 text-primary" />}
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
               <button
-                onClick={() => setShowModeMenu(!showModeMenu)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:bg-muted/80 rounded-full text-xs font-medium text-foreground transition-colors"
+                onClick={() => setShowPanel(!showPanel)}
+                className="md:hidden p-2 hover:bg-muted rounded-lg transition-colors"
               >
-                {tutorModes.find(m => m.value === tutorMode)?.icon}
-                <span className="hidden sm:inline">{tutorMode}</span>
-                <ChevronDown size={12} className={cn("transition-transform", showModeMenu && "rotate-180")} />
+                <BookOpen size={18} />
               </button>
+            </div>
+          </div>
+          <div className="flex px-4 md:px-6 gap-1">
+            <button
+              onClick={() => setActiveTab('notes')}
+              className={cn(
+                "flex items-center gap-1.5 px-4 py-2 text-xs font-medium border-b-2 transition-colors",
+                activeTab === 'notes'
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <StickyNote size={14} />
+              Notas del tema
+            </button>
+            <button
+              onClick={handleSwitchToChat}
+              className={cn(
+                "flex items-center gap-1.5 px-4 py-2 text-xs font-medium border-b-2 transition-colors",
+                activeTab === 'chat'
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <MessageCircle size={14} />
+              Chatear con Tutor
+            </button>
+          </div>
+        </div>
+
+        {activeTab === 'notes' ? (
+          <TopicNotes courseName={courseName} topic={topic || 'General'} onGoToChat={handleSwitchToChat} />
+        ) : (
+          <>
+            <div className="flex-1 overflow-auto px-4 md:px-6 py-4 space-y-4">
               <AnimatePresence>
+                {messages.map((msg) => (
+                  <motion.div
+                    key={msg.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className={cn('flex', msg.role === 'user' ? 'justify-end' : 'justify-start')}
+                  >
+                    <div className={cn(
+                      'max-w-[85%] md:max-w-[70%] rounded-2xl px-4 py-3 text-sm leading-relaxed',
+                      msg.role === 'user'
+                        ? 'bg-primary text-primary-foreground rounded-br-md'
+                        : 'bg-card border border-border rounded-bl-md'
+                    )}>
+                      {msg.role === 'assistant' ? (
+                        <div className="flex gap-3">
+                          <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                            <Sparkles size={14} className="text-primary" />
+                          </div>
+                          <div className="prose prose-sm max-w-none text-foreground [&_p]:mb-2 [&_p:last-child]:mb-0 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-lg [&_strong]:text-foreground">
+                            <ReactMarkdown>{msg.content}</ReactMarkdown>
+                          </div>
+                        </div>
+                      ) : (
+                        <span>{msg.content}</span>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+              {isTyping && messages.length === 0 && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Sparkles size={14} className="text-primary animate-pulse-soft" />
+                  </div>
+                  <div className="bg-card border border-border rounded-2xl rounded-bl-md px-4 py-3">
+                    <div className="flex gap-1">
+                      <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+            <div className="px-4 md:px-6 pb-2">
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+                {quickActions.map((action) => (
+                  <button key={action.label} onClick={() => handleSend(action.label)} disabled={isTyping} className="chip whitespace-nowrap shrink-0 text-xs disabled:opacity-50">
+                    {action.icon}
+                    {action.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="px-4 md:px-6 pb-4">
+              <div className="flex items-end gap-2 bg-card border border-border rounded-2xl p-2 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/40 transition-all">
+                <textarea
+                  ref={inputRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Escribe tu pregunta o respuesta..."
+                  rows={1}
+                  className="flex-1 bg-transparent border-none outline-none resize-none text-sm text-foreground placeholder:text-muted-foreground px-2 py-1.5 max-h-32"
+                />
+                <button onClick={() => handleSend()} disabled={!input.trim() || isTyping} className="p-2 rounded-xl bg-primary text-primary-foreground disabled:opacity-40 hover:bg-primary/90 transition-colors shrink-0">
+                  <Send size={16} />
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className={cn(
+        'border-l border-border bg-card w-72 flex-col',
+        showPanel ? 'flex absolute right-0 top-0 bottom-0 z-40 md:relative' : 'hidden md:flex'
+      )}>
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <h3 className="font-heading font-semibold text-sm">Panel de estudio</h3>
+          <button onClick={() => setShowPanel(false)} className="md:hidden p-1 hover:bg-muted rounded">
+            <X size={16} />
+          </button>
+        </div>
+        <div className="flex-1 overflow-auto p-4 space-y-5">
+          <div>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Tema actual</p>
+            <p className="text-sm font-medium text-foreground">{topic || 'Tema general'}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{courseName}</p>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Acciones rápidas</p>
+            <div className="space-y-1.5">
+              {quickActions.slice(0, 4).map((action) => (
+                <button key={action.label} onClick={() => { setActiveTab('chat'); handleSend(action.label); }} disabled={isTyping} className="w-full flex items-center gap-2 text-left text-xs px-3 py-2 rounded-lg bg-muted/50 hover:bg-muted text-foreground transition-colors disabled:opacity-50">
+                  {action.icon}
+                  {action.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Sesión</p>
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Mensajes</span>
+                <span className="font-medium text-foreground">{messages.length}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Estado</span>
+                <span className="font-medium text-success">Activo</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Objetivo de la sesión</p>
+            <div className="px-3 py-2 rounded-lg bg-primary/5 border border-primary/10">
+              <p className="text-xs text-foreground">Estudiar y practicar con el Tutor AI sobre {topic || courseName}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
                 {showModeMenu && (
                   <motion.div
                     initial={{ opacity: 0, y: -4 }}
