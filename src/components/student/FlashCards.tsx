@@ -262,8 +262,10 @@ export default function FlashCards() {
 
     return (
       <div className="flex flex-col h-full relative">
+        {/* Mastery Bar */}
+        <MasteryBar topic={selectedTopic || 'General'} mastery={mastery} />
         {/* Progress bar */}
-        <div className="px-6 pt-4 pb-2">
+        <div className="px-6 pt-3 pb-2">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-muted-foreground">{currentIndex + 1} de {cards.length}</span>
             <span className="text-xs font-medium text-foreground">{mode === 'review' ? 'Repaso' : 'Evaluación'}</span>
