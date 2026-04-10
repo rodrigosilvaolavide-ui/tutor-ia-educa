@@ -389,37 +389,26 @@ export default function FlashCards() {
 
   // RESULTS
   const stats = getResultStats();
-  const pointsEarned = mode === 'test' ? stats.knew * 15 + stats.partial * 5 : stats.knew * 5 + stats.partial * 2;
-  const badgeUnlocked = pointsEarned >= 50;
-
   return (
     <div className="p-6 md:p-8 max-w-2xl mx-auto animate-fade-in">
       <div className="text-center mb-8">
         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', duration: 0.5 }}
           className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-          <Trophy size={32} className="text-primary" />
+          <CheckCircle size={32} className="text-primary" />
         </motion.div>
         <h1 className="heading-1 text-foreground">¡Sesión completada!</h1>
         <p className="text-muted-foreground mt-1">{mode === 'review' ? 'Repaso' : 'Evaluación'} · {stats.total} tarjetas</p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-2 gap-4 mb-6">
         <div className="stat-card text-center">
           <p className="text-2xl font-bold font-heading text-foreground">{stats.accuracy}%</p>
           <p className="text-xs text-muted-foreground">Precisión</p>
         </div>
         <div className="stat-card text-center">
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
-            className="text-2xl font-bold font-heading text-primary">+{pointsEarned}</motion.p>
-          <p className="text-xs text-muted-foreground">Puntos</p>
-        </div>
-        <div className="stat-card text-center">
-          <div className="flex items-center justify-center gap-1">
-            <Flame size={18} className="text-accent" />
-            <p className="text-2xl font-bold font-heading text-foreground">5</p>
-          </div>
-          <p className="text-xs text-muted-foreground">Racha</p>
+          <p className="text-2xl font-bold font-heading text-foreground">{stats.knew}/{stats.total}</p>
+          <p className="text-xs text-muted-foreground">{mode === 'test' ? 'Correctas' : 'Sabías'}</p>
         </div>
       </div>
 
@@ -442,14 +431,14 @@ export default function FlashCards() {
         </div>
       </div>
 
-      {/* Badge unlocked */}
-      {badgeUnlocked && (
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.5 }}
-          className="stat-card border-accent/30 bg-accent/5 text-center mb-6">
-          <p className="text-3xl mb-2">🏆</p>
-          <p className="font-medium text-foreground">¡Badge desbloqueada!</p>
-          <p className="text-xs text-muted-foreground">Gran mejora</p>
-        </motion.div>
+      {/* Recommendation */}
+      {stats.didntKnow > 0 && (
+        <div className="stat-card border-primary/20 bg-primary/5 mb-6">
+          <p className="text-xs font-medium text-primary mb-1">💡 Recomendación</p>
+          <p className="text-sm text-foreground">
+            Tienes {stats.didntKnow} {stats.didntKnow === 1 ? 'tarjeta' : 'tarjetas'} que necesitas reforzar. Te recomendamos estudiar este tema con el Tutor AI.
+          </p>
+        </div>
       )}
 
       {/* Actions */}

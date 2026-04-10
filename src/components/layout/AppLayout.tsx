@@ -20,8 +20,6 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: 'Tutor AI', id: 'tutor', icon: <Sparkles size={20} /> },
     { label: 'Flash Cards', id: 'flashcards', icon: <Layers size={20} /> },
     { label: 'Simulacros', id: 'simulacros', icon: <Target size={20} /> },
-    { label: 'Mi Clase', id: 'myclass', icon: <Users size={20} /> },
-    { label: 'Perfil', id: 'profile', icon: <User size={20} /> },
   ],
   profesor: [
     { label: 'Dashboard', id: 'home', icon: <LayoutDashboard size={20} /> },
