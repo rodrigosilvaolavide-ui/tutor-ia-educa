@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, RotateCcw, CheckCircle, XCircle, MinusCircle, ChevronRight, Zap, Trophy, Flame, Send, Loader2 } from 'lucide-react';
+import { RotateCcw, CheckCircle, XCircle, MinusCircle, ChevronRight, Zap, Send, Loader2 } from 'lucide-react';
 import { courses } from '@/lib/mock-data';
 import { FlashCard } from '@/lib/gamification';
 import { motion, AnimatePresence } from 'framer-motion';

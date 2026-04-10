@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { useRole } from '@/contexts/RoleContext';
 import { UserRole } from '@/lib/types';
 import {
-  BookOpen, BarChart3, Users,
+  BarChart3, Users,
   LayoutDashboard, ChevronDown, Sparkles, Menu, X,
-  Layers, FileText, GraduationCap, User, Zap, Target
+  Layers, FileText, GraduationCap, Target
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
