@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        heading: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+        heading: ['Inter', 'system-ui', 'sans-serif'],
         body: ['DM Sans', 'system-ui', 'sans-serif'],
       },
       colors: {
@@ -108,6 +108,10 @@ export default {
           from: { opacity: "0", transform: "translateX(16px)" },
           to: { opacity: "1", transform: "translateX(0)" },
         },
+        "slide-h": {
+          from: { opacity: "0", transform: "translateX(24px)" },
+          to: { opacity: "1", transform: "translateX(0)" },
+        },
         "pulse-soft": {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.7" },
@@ -118,6 +122,7 @@ export default {
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in": "fade-in 0.4s ease-out",
         "slide-in-right": "slide-in-right 0.3s ease-out",
+        "slide-h": "slide-h 0.25s ease-out",
         "pulse-soft": "pulse-soft 2s ease-in-out infinite",
       },
     },
