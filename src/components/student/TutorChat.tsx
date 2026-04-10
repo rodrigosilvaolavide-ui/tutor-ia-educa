@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, ArrowLeft, Sparkles, BookOpen, Lightbulb, PenTool, ListChecks, HelpCircle, FileText, ChevronRight, X, AlertCircle, ChevronDown, Check, Search } from 'lucide-react';
+import { Send, ArrowLeft, Sparkles, BookOpen, Lightbulb, PenTool, ListChecks, HelpCircle, FileText, ChevronRight, X, AlertCircle, ChevronDown, Check, Search, StickyNote, MessageCircle } from 'lucide-react';
 import { ChatMessage } from '@/lib/types';
 import { ChatSession, createSession, updateSessionMessages } from '@/lib/chat-storage';
+import { recordChatWithoutNotes, didReadNotesFirst } from '@/lib/notes-tracking';
 import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import TopicNotes from './TopicNotes';
 
 interface TutorChatProps {
   courseId: string;
