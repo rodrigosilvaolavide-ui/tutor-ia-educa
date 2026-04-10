@@ -63,6 +63,12 @@ export default {
           DEFAULT: "hsl(var(--info))",
           foreground: "hsl(var(--info-foreground))",
         },
+        mastery: {
+          red: "hsl(var(--mastery-red))",
+          orange: "hsl(var(--mastery-orange))",
+          blue: "hsl(var(--mastery-blue))",
+          green: "hsl(var(--mastery-green))",
+        },
         chat: {
           user: "hsl(var(--chat-user))",
           ai: "hsl(var(--chat-ai))",
