@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import DoubtDrawer from './DoubtDrawer';
+import MasteryBar, { initMastery, updateCardMastery, type MasteryState, type CardMasteryMap } from './MasteryBar';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
