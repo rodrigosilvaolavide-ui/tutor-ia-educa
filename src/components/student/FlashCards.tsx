@@ -359,6 +359,12 @@ export default function FlashCards() {
             </motion.div>
           </AnimatePresence>
         </div>
+        <DoubtDrawer
+          courseName={courses.find(c => c.id === selectedCourse)?.name || ''}
+          topic={selectedTopic || 'General'}
+          currentContext={card.question}
+          source="flashcards"
+        />
       </div>
     );
   }
