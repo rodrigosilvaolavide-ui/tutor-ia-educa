@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { courses } from '@/lib/mock-data';
 import { SimulacroQuestion } from '@/lib/gamification';
 import { ChevronRight, CheckCircle, XCircle, Clock, Target, TrendingUp, AlertTriangle, Zap, Loader2 } from 'lucide-react';
@@ -34,17 +34,32 @@ async function generateSimulacro(courseName: string, topic: string, count: numbe
   return data.questions;
 }
 
+const EVAL_TIMEOUT_MS = 15000;
+const EVAL_FALLBACK = { correct: false, feedback: 'No se pudo evaluar automáticamente, respuesta registrada.', timedOut: true };
+
 async function evaluateShortAnswer(question: string, correctAnswer: string, studentAnswer: string): Promise<{ correct: boolean; feedback: string }> {
-  const resp = await fetch(`${SUPABASE_URL}/functions/v1/evaluate-simulacro`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SUPABASE_KEY}` },
-    body: JSON.stringify({ question, correctAnswer, studentAnswer }),
-  });
-  if (!resp.ok) {
-    const err = await resp.json().catch(() => ({ error: 'Error de red' }));
-    throw new Error(err.error || 'Error evaluando respuesta');
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), EVAL_TIMEOUT_MS);
+
+  try {
+    const resp = await fetch(`${SUPABASE_URL}/functions/v1/evaluate-simulacro`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SUPABASE_KEY}` },
+      body: JSON.stringify({ question, correctAnswer, studentAnswer }),
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+
+    if (!resp.ok) {
+      console.error('evaluate-simulacro error:', resp.status);
+      return EVAL_FALLBACK;
+    }
+    return await resp.json();
+  } catch (e) {
+    clearTimeout(timer);
+    console.warn('evaluateShortAnswer failed:', e);
+    return EVAL_FALLBACK;
   }
-  return resp.json();
 }
 
 export default function Simulacros() {
@@ -84,33 +99,17 @@ export default function Simulacros() {
     }
   };
 
-  const submitAnswer = async () => {
-    if (submitting) return;
+  const [showSkip, setShowSkip] = useState(false);
+
+  // Show "skip" button after 5s of evaluating
+  useEffect(() => {
+    if (!submitting) { setShowSkip(false); return; }
+    const t = setTimeout(() => setShowSkip(true), 5000);
+    return () => clearTimeout(t);
+  }, [submitting]);
+
+  const advanceAfterAnswer = (answer: string, correct: boolean, feedback: string) => {
     const q = questions[currentIndex];
-    let answer = '';
-    let correct = false;
-    let feedback = '';
-
-    if (q.type === 'multiple_choice') {
-      answer = selectedOption;
-      correct = selectedOption === q.correctAnswer;
-      feedback = correct ? '¡Correcto!' : `La respuesta correcta era: ${q.correctAnswer}`;
-    } else {
-      answer = shortAnswer;
-      setSubmitting(true);
-      try {
-        const result = await evaluateShortAnswer(q.question, q.correctAnswer, shortAnswer);
-        correct = result.correct;
-        feedback = result.feedback;
-      } catch {
-        // Fallback local
-        correct = shortAnswer.toLowerCase().includes(q.correctAnswer.toLowerCase().slice(0, 8));
-        feedback = correct ? '¡Correcto!' : 'Revisa la respuesta correcta.';
-      } finally {
-        setSubmitting(false);
-      }
-    }
-
     setAnswers(prev => [...prev, { questionId: q.id, answer, correct, feedback }]);
     const masteryRating = correct ? 'correct' : 'incorrect';
     const updated = updateCardMastery(q.id, masteryRating, cardMasteryMap, mastery);
@@ -118,12 +117,32 @@ export default function Simulacros() {
     setCardMasteryMap(updated.cardMap);
     setSelectedOption('');
     setShortAnswer('');
+    setSubmitting(false);
 
     if (currentIndex + 1 >= questions.length) {
       setEndTime(new Date());
       setPhase('results');
     } else {
       setCurrentIndex(prev => prev + 1);
+    }
+  };
+
+  const skipEvaluation = () => {
+    advanceAfterAnswer(shortAnswer, false, 'Evaluación omitida. Respuesta registrada.');
+  };
+
+  const submitAnswer = async () => {
+    if (submitting) return;
+    const q = questions[currentIndex];
+
+    if (q.type === 'multiple_choice') {
+      const correct = selectedOption === q.correctAnswer;
+      const feedback = correct ? '¡Correcto!' : `La respuesta correcta era: ${q.correctAnswer}`;
+      advanceAfterAnswer(selectedOption, correct, feedback);
+    } else {
+      setSubmitting(true);
+      const result = await evaluateShortAnswer(q.question, q.correctAnswer, shortAnswer);
+      advanceAfterAnswer(shortAnswer, result.correct, result.feedback);
     }
   };
 
@@ -258,11 +277,18 @@ export default function Simulacros() {
               <button onClick={submitAnswer} disabled={!canSubmit || submitting}
                 className="w-full py-3 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 disabled:opacity-40 flex items-center justify-center gap-2">
                 {submitting ? (
-                  <><Loader2 size={16} className="animate-spin" /> Evaluando...</>
+                  <><Loader2 size={16} className="animate-spin" /> Evaluando respuesta...</>
                 ) : (
                   <>{currentIndex + 1 >= questions.length ? 'Finalizar' : 'Siguiente'} <ChevronRight size={16} /></>
                 )}
               </button>
+
+              {submitting && showSkip && (
+                <button onClick={skipEvaluation}
+                  className="w-full py-2.5 border border-border text-muted-foreground rounded-xl text-sm font-medium hover:bg-muted/50 transition-colors animate-fade-in">
+                  Saltar evaluación
+                </button>
+              )}
             </motion.div>
           </AnimatePresence>
         </div>
