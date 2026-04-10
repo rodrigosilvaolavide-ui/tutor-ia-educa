@@ -257,22 +257,31 @@ export default function TutorChat({ courseId, courseName, topic, onBack, existin
     }
   };
 
+  const handleSwitchToChat = useCallback(() => {
+    setActiveTab('chat');
+    // Track that user went to chat without reading notes if they haven't
+    if (!didReadNotesFirst(courseName, topic || 'General')) {
+      recordChatWithoutNotes(courseName, topic || 'General');
+    }
+  }, [courseName, topic]);
+
   return (
     <div className="flex h-full">
-      {/* Main Chat */}
+      {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Chat Header */}
-        <div className="flex items-center gap-3 px-4 md:px-6 py-3 border-b border-border bg-card">
-          <button onClick={onBack} className="p-1.5 hover:bg-muted rounded-lg transition-colors">
-            <ArrowLeft size={18} />
-          </button>
-          <div className="flex-1 min-w-0">
-            <h2 className="font-heading font-semibold text-sm text-foreground">{courseName}</h2>
-            <p className="text-xs text-muted-foreground truncate">{topic || 'Tema general'}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            {/* Mode Selector */}
-            <div className="relative" ref={modeMenuRef}>
+        {/* Header with Tabs */}
+        <div className="border-b border-border bg-card">
+          <div className="flex items-center gap-3 px-4 md:px-6 py-3">
+            <button onClick={onBack} className="p-1.5 hover:bg-muted rounded-lg transition-colors">
+              <ArrowLeft size={18} />
+            </button>
+            <div className="flex-1 min-w-0">
+              <h2 className="font-heading font-semibold text-sm text-foreground">{courseName}</h2>
+              <p className="text-xs text-muted-foreground truncate">{topic || 'Tema general'}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              {/* Mode Selector - only show on chat tab */}
+              {activeTab === 'chat' && (
               <button
                 onClick={() => setShowModeMenu(!showModeMenu)}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:bg-muted/80 rounded-full text-xs font-medium text-foreground transition-colors"
