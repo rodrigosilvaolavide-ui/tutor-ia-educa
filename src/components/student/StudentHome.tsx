@@ -1,6 +1,6 @@
-import { BookOpen, Clock, ArrowRight, Flame, TrendingUp, Star, Target, Layers, Zap, Trophy } from 'lucide-react';
+import { Brain, Layers, Trophy, ArrowRight, Clock, Target, Star, CheckCircle2 } from 'lucide-react';
 import { courses, recentSessions } from '@/lib/mock-data';
-import { currentStudentStats, mockWeeklyGoals, mockBadges, getStudentLevel, courseProgress, topicMastery, getMasteryLevel, masteryLabels } from '@/lib/gamification';
+import { currentStudentStats, mockWeeklyGoals, getStudentLevel, courseProgress, topicMastery } from '@/lib/gamification';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -11,203 +11,216 @@ interface StudentHomeProps {
 
 export default function StudentHome({ onStartStudy, onNavigate }: StudentHomeProps) {
   const level = getStudentLevel(currentStudentStats.points);
-  const unlockedBadges = mockBadges.filter(b => b.unlocked);
   const weakTopics = Object.entries(topicMastery).filter(([, v]) => v < 50).sort((a, b) => a[1] - b[1]);
 
   return (
-    <div className="p-6 md:p-8 max-w-6xl mx-auto space-y-8 animate-fade-in">
-      {/* Welcome + CTA */}
-      <div className="flex items-start justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="heading-1 text-foreground">¡Hola, Santiago! 👋</h1>
-          <p className="text-muted-foreground mt-1">¿Qué quieres estudiar hoy?</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-accent/10 rounded-full">
-            <Flame size={14} className="text-accent" />
-            <span className="text-sm font-semibold text-foreground">{currentStudentStats.streak} días</span>
-          </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 rounded-full">
-            <Star size={14} className="text-primary" />
-            <span className="text-sm font-semibold text-foreground">{currentStudentStats.points} pts</span>
-          </div>
-        </div>
-      </div>
+    <div className="max-w-5xl mx-auto space-y-8 animate-fade-in pb-12">
+      {/* Hero Section */}
+      <HeroSection
+        name={currentStudentStats.name}
+        streak={currentStudentStats.streak}
+        points={currentStudentStats.points}
+        levelName={level.name}
+      />
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: 'Racha actual', value: `${currentStudentStats.streak} días`, icon: <Flame size={18} />, color: 'text-accent' },
-          { label: 'Tiempo esta semana', value: '2h 45m', icon: <Clock size={18} />, color: 'text-info' },
-          { label: 'Nivel', value: level.name, icon: <Star size={18} />, color: 'text-primary' },
-          { label: 'Dominio promedio', value: '72%', icon: <TrendingUp size={18} />, color: 'text-success' },
-        ].map((stat) => (
-          <div key={stat.label} className="stat-card">
-            <div className={cn(stat.color, 'mb-2')}>{stat.icon}</div>
-            <p className="text-xl font-bold font-heading text-foreground">{stat.value}</p>
-            <p className="text-xs text-muted-foreground">{stat.label}</p>
-          </div>
-        ))}
-      </div>
+      {/* Main Actions */}
+      <ActionCards onNavigate={onNavigate} onStartStudy={onStartStudy} />
 
-      {/* CTA: Continue studying */}
-      <div>
-        <h2 className="heading-3 text-foreground mb-4">Continuar estudiando</h2>
-        <div className="grid md:grid-cols-2 gap-4">
-          {recentSessions.slice(0, 2).map((session) => (
-            <motion.button
-              key={session.id}
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
-              onClick={() => onStartStudy(session.courseId)}
-              className="stat-card flex items-center gap-4 text-left w-full group"
-            >
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-2xl shrink-0">
-                {courses.find(c => c.id === session.courseId)?.icon}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-foreground">{session.courseName}</p>
-                <p className="text-sm text-muted-foreground truncate">{session.topic}</p>
-                <p className="text-xs text-muted-foreground mt-1">{session.duration} min · {session.score}% dominio</p>
-              </div>
-              <ArrowRight size={18} className="text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
-            </motion.button>
-          ))}
-        </div>
-      </div>
+      {/* Continue Studying */}
+      <ContinueStudying onStartStudy={onStartStudy} />
 
-      {/* Quick access */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-          onClick={() => onNavigate('flashcards')}
-          className="stat-card flex flex-col items-center gap-3 py-6 cursor-pointer bg-accent/5 border-accent/20 hover:bg-accent/10">
-          <Layers size={24} className="text-accent" />
-          <p className="font-medium text-foreground text-sm">Flash Cards</p>
-          <p className="text-xs text-muted-foreground">Repasa y practica</p>
-        </motion.button>
-        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-          onClick={() => onNavigate('simulacros')}
-          className="stat-card flex flex-col items-center gap-3 py-6 cursor-pointer bg-info/5 border-info/20 hover:bg-info/10">
-          <Target size={24} className="text-info" />
-          <p className="font-medium text-foreground text-sm">Simulacros</p>
-          <p className="text-xs text-muted-foreground">Mide tu preparación</p>
-        </motion.button>
-        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-          onClick={() => onNavigate('tutor')}
-          className="stat-card flex flex-col items-center gap-3 py-6 cursor-pointer bg-primary/5 border-primary/20 hover:bg-primary/10 col-span-2 md:col-span-1">
-          <Zap size={24} className="text-primary" />
-          <p className="font-medium text-foreground text-sm">Tutor AI</p>
-          <p className="text-xs text-muted-foreground">Estudia con tu tutor</p>
-        </motion.button>
-      </div>
+      {/* Weekly Goals */}
+      <WeeklyGoals />
 
-      {/* Courses */}
-      <div>
-        <h2 className="heading-3 text-foreground mb-4">Mis cursos</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {courses.map((course) => {
-            const cp = courseProgress.find(c => c.courseId === course.id);
-            return (
-              <motion.button
-                key={course.id}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => onStartStudy(course.id)}
-                className="stat-card flex flex-col items-center gap-3 py-6 group cursor-pointer"
-              >
-                <div className="text-3xl">{course.icon}</div>
-                <p className="font-medium text-foreground text-sm">{course.name}</p>
-                {cp && (
-                  <div className="w-full px-3">
-                    <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                      <div className="h-full bg-primary rounded-full" style={{ width: `${cp.mastery}%` }} />
-                    </div>
-                    <p className="text-[10px] text-muted-foreground mt-1">{cp.mastery}% dominio</p>
-                  </div>
-                )}
-              </motion.button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Weekly goals */}
-      <div>
-        <h2 className="heading-3 text-foreground mb-4">Metas semanales</h2>
-        <div className="grid md:grid-cols-2 gap-3">
-          {mockWeeklyGoals.map(goal => (
-            <div key={goal.id} className={cn('stat-card flex items-center gap-3', goal.completed && 'bg-success/5 border-success/20')}>
-              <div className={cn('w-8 h-8 rounded-full flex items-center justify-center shrink-0',
-                goal.completed ? 'bg-success/10' : 'bg-muted')}>
-                {goal.completed ? <Trophy size={14} className="text-success" /> : <Target size={14} className="text-muted-foreground" />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className={cn('text-sm', goal.completed ? 'text-success font-medium' : 'text-foreground')}>{goal.description}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
-                    <div className={cn('h-full rounded-full', goal.completed ? 'bg-success' : 'bg-primary')}
-                      style={{ width: `${(goal.current / goal.target) * 100}%` }} />
-                  </div>
-                  <span className="text-xs text-muted-foreground">{goal.current}/{goal.target}</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Topics to reinforce */}
+      {/* Topics to Reinforce */}
       {weakTopics.length > 0 && (
-        <div>
-          <h2 className="heading-3 text-foreground mb-4">Temas por reforzar</h2>
-          <div className="flex flex-wrap gap-2">
-            {weakTopics.map(([topic, pct]) => (
-              <button key={topic} onClick={() => onStartStudy()} className="chip flex items-center gap-1.5">
-                <Star size={14} />
-                {topic} ({pct}%)
-              </button>
-            ))}
-          </div>
-        </div>
+        <ReinforcementChips topics={weakTopics} onStartStudy={onStartStudy} />
       )}
+    </div>
+  );
+}
 
-      {/* Recent badges */}
-      {unlockedBadges.length > 0 && (
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="heading-3 text-foreground">Logros recientes</h2>
-            <button onClick={() => onNavigate('profile')} className="text-xs text-primary hover:underline">Ver todos</button>
-          </div>
-          <div className="flex gap-3 overflow-x-auto pb-2">
-            {unlockedBadges.slice(0, 4).map(badge => (
-              <div key={badge.id} className="stat-card text-center py-4 px-6 shrink-0">
-                <span className="text-2xl block mb-1">{badge.icon}</span>
-                <p className="text-xs font-medium text-foreground">{badge.name}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+/* ─── Hero ─── */
+function HeroSection({ name, streak, points, levelName }: { name: string; streak: number; points: number; levelName: string }) {
+  return (
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent px-6 py-8 md:px-10 md:py-10">
+      {/* Decorative blobs */}
+      <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-primary/5 blur-3xl" />
+      <div className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-accent/5 blur-3xl" />
 
-      {/* Recent sessions */}
-      <div>
-        <h2 className="heading-3 text-foreground mb-4">Sesiones recientes</h2>
-        <div className="space-y-2">
-          {recentSessions.map((session) => (
-            <div key={session.id} className="stat-card flex items-center gap-4">
-              <div className="text-xl">{courses.find(c => c.id === session.courseId)?.icon}</div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground">{session.topic}</p>
-                <p className="text-xs text-muted-foreground">{session.courseName} · {session.date.toLocaleDateString('es-PE', { day: 'numeric', month: 'short' })}</p>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="text-sm font-semibold text-foreground">{session.score}%</p>
-                <p className="text-xs text-muted-foreground">{session.duration} min</p>
-              </div>
-            </div>
-          ))}
+      <div className="relative z-10 space-y-4">
+        <h1 className="heading-1 text-foreground">
+          ¡Hola, {name}! 🚀
+        </h1>
+        <p className="text-muted-foreground text-lg">¿Listo para estudiar hoy?</p>
+
+        <div className="flex flex-wrap items-center gap-3 pt-1">
+          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-mastery-orange/10 text-sm font-semibold text-foreground">
+            🔥 {streak} días
+          </span>
+          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-primary/10 text-sm font-semibold text-foreground">
+            ⚡ {points} pts
+          </span>
+          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-mastery-green/10 text-sm font-semibold text-foreground">
+            ✨ {levelName}
+          </span>
         </div>
       </div>
     </div>
   );
+}
+
+/* ─── Action Cards ─── */
+const actions = [
+  { key: 'tutor', label: 'Estudiar con Tutor AI', desc: 'Aprende con tu tutor personal', icon: Brain, colorClass: 'bg-primary/10 text-primary', borderClass: 'border-primary/20 hover:border-primary/40' },
+  { key: 'flashcards', label: 'Repasar Flash Cards', desc: 'Practica lo aprendido', icon: Layers, colorClass: 'bg-accent/10 text-accent', borderClass: 'border-accent/20 hover:border-accent/40' },
+  { key: 'simulacros', label: 'Iniciar Simulacro', desc: 'Mide tu preparación', icon: Trophy, colorClass: 'bg-mastery-blue/10 text-info', borderClass: 'border-info/20 hover:border-info/40' },
+] as const;
+
+function ActionCards({ onNavigate, onStartStudy }: { onNavigate: (v: string) => void; onStartStudy: (id?: string) => void }) {
+  const handle = (key: string) => {
+    if (key === 'tutor') onStartStudy();
+    else onNavigate(key);
+  };
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 px-1">
+      {actions.map(a => (
+        <motion.button
+          key={a.key}
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => handle(a.key)}
+          className={cn(
+            'stat-card flex flex-col items-center gap-3 py-7 cursor-pointer border transition-all',
+            a.borderClass,
+          )}
+        >
+          <div className={cn('w-12 h-12 rounded-xl flex items-center justify-center', a.colorClass)}>
+            <a.icon size={24} />
+          </div>
+          <div className="text-center">
+            <p className="font-semibold text-foreground text-sm">{a.label}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{a.desc}</p>
+          </div>
+        </motion.button>
+      ))}
+    </div>
+  );
+}
+
+/* ─── Continue Studying ─── */
+function ContinueStudying({ onStartStudy }: { onStartStudy: (id?: string) => void }) {
+  const recent = recentSessions.slice(0, 3);
+  if (recent.length === 0) return null;
+
+  return (
+    <section className="px-1 space-y-3">
+      <h2 className="heading-3 text-foreground">Continuar estudiando</h2>
+      <div className="space-y-2.5">
+        {recent.map(session => {
+          const course = courses.find(c => c.id === session.courseId);
+          return (
+            <motion.button
+              key={session.id}
+              whileHover={{ x: 2 }}
+              onClick={() => onStartStudy(session.courseId)}
+              className="stat-card flex items-center gap-4 w-full text-left group"
+            >
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-xl shrink-0">
+                {course?.icon}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">{session.topic}</p>
+                <div className="flex items-center gap-2 mt-1.5">
+                  <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden max-w-[140px]">
+                    <div
+                      className={cn('h-full rounded-full', getMasteryBarColor(session.score))}
+                      style={{ width: `${session.score}%` }}
+                    />
+                  </div>
+                  <span className="text-xs text-muted-foreground">{session.score}%</span>
+                </div>
+              </div>
+              <span className="text-xs text-muted-foreground shrink-0 flex items-center gap-1">
+                <Clock size={12} /> {session.duration} min
+              </span>
+              <ArrowRight size={16} className="text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+            </motion.button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+/* ─── Weekly Goals ─── */
+function WeeklyGoals() {
+  return (
+    <section className="px-1 space-y-3">
+      <h2 className="heading-3 text-foreground">Metas semanales</h2>
+      <div className="space-y-2.5">
+        {mockWeeklyGoals.map(goal => (
+          <div key={goal.id} className={cn('stat-card flex items-center gap-3', goal.completed && 'border-mastery-green/30')}>
+            <div className={cn(
+              'w-7 h-7 rounded-full flex items-center justify-center shrink-0',
+              goal.completed ? 'bg-mastery-green/10' : 'bg-muted',
+            )}>
+              {goal.completed
+                ? <CheckCircle2 size={16} className="text-mastery-green" />
+                : <Target size={14} className="text-muted-foreground" />}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className={cn('text-sm', goal.completed ? 'text-mastery-green font-medium line-through' : 'text-foreground')}>
+                {goal.description}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0 w-28">
+              <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                <div
+                  className={cn('h-full rounded-full transition-all', goal.completed ? 'bg-mastery-green' : 'bg-primary')}
+                  style={{ width: `${Math.min((goal.current / goal.target) * 100, 100)}%` }}
+                />
+              </div>
+              <span className="text-xs text-muted-foreground w-8 text-right">{goal.current}/{goal.target}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/* ─── Reinforcement Chips ─── */
+function ReinforcementChips({ topics, onStartStudy }: { topics: [string, number][]; onStartStudy: (id?: string) => void }) {
+  return (
+    <section className="px-1 space-y-3">
+      <h2 className="heading-3 text-foreground">Temas por reforzar</h2>
+      <div className="flex flex-wrap gap-2">
+        {topics.map(([topic, pct]) => (
+          <button
+            key={topic}
+            onClick={() => onStartStudy()}
+            className={cn(
+              'inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium transition-all cursor-pointer hover:scale-105',
+              pct < 25
+                ? 'bg-mastery-red/10 text-mastery-red hover:bg-mastery-red/20'
+                : 'bg-mastery-orange/10 text-mastery-orange hover:bg-mastery-orange/20',
+            )}
+          >
+            <Star size={13} />
+            {topic} · {pct}%
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/* ─── Helpers ─── */
+function getMasteryBarColor(pct: number): string {
+  if (pct < 30) return 'bg-mastery-red';
+  if (pct < 55) return 'bg-mastery-orange';
+  if (pct < 80) return 'bg-mastery-blue';
+  return 'bg-mastery-green';
 }
