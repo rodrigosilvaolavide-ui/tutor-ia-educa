@@ -277,11 +277,18 @@ export default function Simulacros() {
               <button onClick={submitAnswer} disabled={!canSubmit || submitting}
                 className="w-full py-3 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 disabled:opacity-40 flex items-center justify-center gap-2">
                 {submitting ? (
-                  <><Loader2 size={16} className="animate-spin" /> Evaluando...</>
+                  <><Loader2 size={16} className="animate-spin" /> Evaluando respuesta...</>
                 ) : (
                   <>{currentIndex + 1 >= questions.length ? 'Finalizar' : 'Siguiente'} <ChevronRight size={16} /></>
                 )}
               </button>
+
+              {submitting && showSkip && (
+                <button onClick={skipEvaluation}
+                  className="w-full py-2.5 border border-border text-muted-foreground rounded-xl text-sm font-medium hover:bg-muted/50 transition-colors animate-fade-in">
+                  Saltar evaluación
+                </button>
+              )}
             </motion.div>
           </AnimatePresence>
         </div>
