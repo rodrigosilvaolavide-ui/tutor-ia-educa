@@ -65,6 +65,8 @@ export default function FlashCards() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [cards, setCards] = useState<FlashCard[]>([]);
   const [evaluating, setEvaluating] = useState(false);
+  const [mastery, setMastery] = useState<MasteryState>(initMastery(0));
+  const [cardMasteryMap, setCardMasteryMap] = useState<CardMasteryMap>({});
 
   const startSession = async () => {
     const course = courses.find(c => c.id === selectedCourse);
