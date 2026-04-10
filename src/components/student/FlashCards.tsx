@@ -108,6 +108,10 @@ export default function FlashCards() {
     try {
       const result = await evaluateAnswer(card.question, card.answer, testAnswer);
       setTestResults(prev => [...prev, { card, answer: testAnswer, rating: result.rating, feedback: result.feedback }]);
+      const masteryRating = result.rating === 'correct' ? 'correct' : result.rating === 'partial' ? 'partial' : 'incorrect';
+      const updated = updateCardMastery(card.id, masteryRating as any, cardMasteryMap, mastery);
+      setMastery(updated.mastery);
+      setCardMasteryMap(updated.cardMap);
       setShowFeedback(true);
       setTestAnswer('');
     } catch (e) {
@@ -117,6 +121,9 @@ export default function FlashCards() {
       const rating = correct ? 'correct' : testAnswer.length > 15 ? 'partial' : 'incorrect';
       const feedback = rating === 'correct' ? '¡Correcto! Bien hecho.' : rating === 'partial' ? 'Parcialmente correcto. Revisa los detalles.' : 'Incorrecto. Revisa la respuesta correcta.';
       setTestResults(prev => [...prev, { card, answer: testAnswer, rating, feedback }]);
+      const updated = updateCardMastery(card.id, rating as any, cardMasteryMap, mastery);
+      setMastery(updated.mastery);
+      setCardMasteryMap(updated.cardMap);
       setShowFeedback(true);
       setTestAnswer('');
     } finally {
