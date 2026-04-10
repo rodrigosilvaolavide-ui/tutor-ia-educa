@@ -72,6 +72,7 @@ export default function TeacherStudents({ onBack, initialStudentId, onClearStude
   const [filters, setFilters] = useState<AppliedFilters>({});
   const [viewingChats, setViewingChats] = useState(false);
   const [viewingChatDetail, setViewingChatDetail] = useState<string | null>(null);
+  const [showTopicMastery, setShowTopicMastery] = useState(false);
 
   useEffect(() => {
     if (initialStudentId) {
