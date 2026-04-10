@@ -1,7 +1,8 @@
-import { Brain, Layers, Trophy, ArrowRight, Clock, Target, Star, CheckCircle2 } from 'lucide-react';
+import { useState } from 'react';
+import { Brain, Layers, Target, ArrowRight, Clock, ChevronRight, ChevronDown, BookOpen, TrendingUp, AlertCircle, Zap, BarChart3, X } from 'lucide-react';
 import { courses, recentSessions } from '@/lib/mock-data';
-import { currentStudentStats, mockWeeklyGoals, getStudentLevel, courseProgress, topicMastery } from '@/lib/gamification';
-import { motion } from 'framer-motion';
+import { currentStudentStats, courseProgress, topicMastery, getMasteryLevel, masteryLabels } from '@/lib/gamification';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 interface StudentHomeProps {
@@ -9,61 +10,104 @@ interface StudentHomeProps {
   onNavigate: (view: string) => void;
 }
 
+/* ─── Study recommendations (mock) ─── */
+const studyRecommendations = [
+  {
+    course: 'Matemática', coursIcon: '📐', courseId: 'math',
+    topic: 'Factorización', reason: 'Te está costando este tema',
+    action: 'tutor' as const, actionLabel: 'Estudiar con Tutor AI',
+  },
+  {
+    course: 'Ciencia y Tecnología', coursIcon: '🔬', courseId: 'science',
+    topic: 'La célula', reason: 'Lo dejaste a medias la última vez',
+    action: 'tutor' as const, actionLabel: 'Continuar con Tutor AI',
+  },
+  {
+    course: 'Inglés', coursIcon: '🌎', courseId: 'english',
+    topic: 'Present Perfect', reason: 'Conviene reforzar antes del simulacro',
+    action: 'flashcards' as const, actionLabel: 'Practicar Flash Cards',
+  },
+  {
+    course: 'Ciencias Sociales', coursIcon: '🌍', courseId: 'social',
+    topic: 'Regiones naturales', reason: 'Es tu siguiente paso recomendado',
+    action: 'tutor' as const, actionLabel: 'Estudiar con Tutor AI',
+  },
+];
+
+/* ─── Recommended plan ─── */
+const recommendedPlan = [
+  { text: 'Reforzar Factorización en Matemática', action: 'tutor', courseId: 'math', topic: 'Factorización', icon: Brain },
+  { text: 'Completar simulacro de Ciencia y Tecnología', action: 'simulacros', courseId: 'science', topic: '', icon: Target },
+  { text: 'Terminar La célula en Ciencia', action: 'tutor', courseId: 'science', topic: 'La célula', icon: BookOpen },
+  { text: 'Repasar Present Perfect con Flash Cards', action: 'flashcards', courseId: 'english', topic: 'Present Perfect', icon: Layers },
+];
+
 export default function StudentHome({ onStartStudy, onNavigate }: StudentHomeProps) {
-  const level = getStudentLevel(currentStudentStats.points);
-  const weakTopics = Object.entries(topicMastery).filter(([, v]) => v < 50).sort((a, b) => a[1] - b[1]);
+  const weakTopics = Object.entries(topicMastery)
+    .filter(([, v]) => v < 50)
+    .sort((a, b) => a[1] - b[1]);
+
+  const [expandedCourse, setExpandedCourse] = useState<string | null>(null);
+  const [reinforceDetail, setReinforceDetail] = useState<string | null>(null);
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-fade-in pb-12">
-      {/* Hero Section */}
-      <HeroSection
-        name={currentStudentStats.name}
-        streak={currentStudentStats.streak}
-        points={currentStudentStats.points}
-        levelName={level.name}
-      />
+      {/* Header */}
+      <HeaderSection name={currentStudentStats.name} />
 
-      {/* Main Actions */}
+      {/* Main CTAs */}
       <ActionCards onNavigate={onNavigate} onStartStudy={onStartStudy} />
 
-      {/* Continue Studying */}
+      {/* Qué estudiar ahora */}
+      <StudyNowSection recommendations={studyRecommendations} onStartStudy={onStartStudy} onNavigate={onNavigate} />
+
+      {/* Continuar estudiando */}
       <ContinueStudying onStartStudy={onStartStudy} />
 
-      {/* Weekly Goals */}
-      <WeeklyGoals />
+      {/* Progreso por curso */}
+      <CourseProgressSection expandedCourse={expandedCourse} setExpandedCourse={setExpandedCourse} onStartStudy={onStartStudy} onNavigate={onNavigate} />
 
-      {/* Topics to Reinforce */}
+      {/* Temas por reforzar */}
       {weakTopics.length > 0 && (
-        <ReinforcementChips topics={weakTopics} onStartStudy={onStartStudy} />
+        <ReinforceSection topics={weakTopics} onStartStudy={onStartStudy} reinforceDetail={reinforceDetail} setReinforceDetail={setReinforceDetail} />
       )}
+
+      {/* Plan recomendado */}
+      <RecommendedPlan onStartStudy={onStartStudy} onNavigate={onNavigate} />
+
+      {/* Sesiones recientes */}
+      <RecentActivity />
     </div>
   );
 }
 
-/* ─── Hero ─── */
-function HeroSection({ name, streak, points, levelName }: { name: string; streak: number; points: number; levelName: string }) {
+/* ─── Header ─── */
+function HeaderSection({ name }: { name: string }) {
+  const daysStudied = 4;
+  const sessionsThisWeek = 6;
+  const weakCount = Object.values(topicMastery).filter(v => v < 50).length;
+
   return (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent px-6 py-8 md:px-10 md:py-10">
-      {/* Decorative blobs */}
       <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-primary/5 blur-3xl" />
-      <div className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-accent/5 blur-3xl" />
-
       <div className="relative z-10 space-y-4">
         <h1 className="heading-1 text-foreground">
-          ¡Hola, {name}! 🚀
+          ¡Hola, {name}! 👋
         </h1>
-        <p className="text-muted-foreground text-lg">¿Listo para estudiar hoy?</p>
+        <p className="text-muted-foreground text-lg">¿Qué vamos a estudiar hoy?</p>
 
         <div className="flex flex-wrap items-center gap-3 pt-1">
-          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-mastery-orange/10 text-sm font-semibold text-foreground">
-            🔥 {streak} días
+          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-primary/10 text-sm font-medium text-foreground">
+            📅 {daysStudied} días estudiados esta semana
           </span>
-          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-primary/10 text-sm font-semibold text-foreground">
-            ⚡ {points} pts
+          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-mastery-blue/10 text-sm font-medium text-foreground">
+            📖 {sessionsThisWeek} sesiones completadas
           </span>
-          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-mastery-green/10 text-sm font-semibold text-foreground">
-            ✨ {levelName}
-          </span>
+          {weakCount > 0 && (
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-mastery-orange/10 text-sm font-medium text-foreground">
+              ⚠️ {weakCount} temas por reforzar
+            </span>
+          )}
         </div>
       </div>
     </div>
@@ -72,9 +116,9 @@ function HeroSection({ name, streak, points, levelName }: { name: string; streak
 
 /* ─── Action Cards ─── */
 const actions = [
-  { key: 'tutor', label: 'Estudiar con Tutor AI', desc: 'Aprende con tu tutor personal', icon: Brain, colorClass: 'bg-primary/10 text-primary', borderClass: 'border-primary/20 hover:border-primary/40' },
-  { key: 'flashcards', label: 'Repasar Flash Cards', desc: 'Practica lo aprendido', icon: Layers, colorClass: 'bg-accent/10 text-accent', borderClass: 'border-accent/20 hover:border-accent/40' },
-  { key: 'simulacros', label: 'Iniciar Simulacro', desc: 'Mide tu preparación', icon: Trophy, colorClass: 'bg-mastery-blue/10 text-info', borderClass: 'border-info/20 hover:border-info/40' },
+  { key: 'tutor', label: 'Estudiar con Tutor AI', desc: 'Aprende paso a paso con tu tutor', icon: Brain, colorClass: 'bg-primary/10 text-primary', borderClass: 'border-primary/20 hover:border-primary/40' },
+  { key: 'flashcards', label: 'Repasar Flash Cards', desc: 'Practica y fija lo aprendido', icon: Layers, colorClass: 'bg-accent/10 text-accent', borderClass: 'border-accent/20 hover:border-accent/40' },
+  { key: 'simulacros', label: 'Iniciar Simulacro', desc: 'Mide qué tan preparado estás', icon: Target, colorClass: 'bg-mastery-blue/10 text-info', borderClass: 'border-info/20 hover:border-info/40' },
 ] as const;
 
 function ActionCards({ onNavigate, onStartStudy }: { onNavigate: (v: string) => void; onStartStudy: (id?: string) => void }) {
@@ -109,10 +153,55 @@ function ActionCards({ onNavigate, onStartStudy }: { onNavigate: (v: string) => 
   );
 }
 
+/* ─── Qué estudiar ahora ─── */
+function StudyNowSection({ recommendations, onStartStudy, onNavigate }: {
+  recommendations: typeof studyRecommendations;
+  onStartStudy: (id?: string) => void;
+  onNavigate: (v: string) => void;
+}) {
+  return (
+    <section className="px-1 space-y-3">
+      <div className="flex items-center gap-2">
+        <Zap size={18} className="text-primary" />
+        <h2 className="heading-3 text-foreground">Qué estudiar ahora</h2>
+      </div>
+      <div className="space-y-2.5">
+        {recommendations.map((rec) => (
+          <motion.button
+            key={`${rec.courseId}-${rec.topic}`}
+            whileHover={{ x: 2 }}
+            onClick={() => {
+              if (rec.action === 'tutor') onStartStudy(rec.courseId);
+              else onNavigate(rec.action);
+            }}
+            className="stat-card flex items-center gap-4 w-full text-left group"
+          >
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-xl shrink-0">
+              {rec.coursIcon}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground truncate">{rec.course}: {rec.topic}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{rec.reason}</p>
+            </div>
+            <span className="text-xs text-primary font-medium shrink-0 hidden sm:block">{rec.actionLabel}</span>
+            <ArrowRight size={16} className="text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+          </motion.button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 /* ─── Continue Studying ─── */
 function ContinueStudying({ onStartStudy }: { onStartStudy: (id?: string) => void }) {
   const recent = recentSessions.slice(0, 3);
   if (recent.length === 0) return null;
+
+  const insights: Record<string, string> = {
+    's1': 'Buen avance, te falta practicar más',
+    's2': 'Te falta reforzar conceptos base',
+    's3': 'Conviene cerrar este tema antes de seguir',
+  };
 
   return (
     <section className="px-1 space-y-3">
@@ -132,6 +221,9 @@ function ContinueStudying({ onStartStudy }: { onStartStudy: (id?: string) => voi
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{session.topic}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {insights[session.id] || `Última sesión: ${session.courseName}`}
+                </p>
                 <div className="flex items-center gap-2 mt-1.5">
                   <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden max-w-[140px]">
                     <div
@@ -154,64 +246,283 @@ function ContinueStudying({ onStartStudy }: { onStartStudy: (id?: string) => voi
   );
 }
 
-/* ─── Weekly Goals ─── */
-function WeeklyGoals() {
+/* ─── Progreso por curso ─── */
+function CourseProgressSection({ expandedCourse, setExpandedCourse, onStartStudy, onNavigate }: {
+  expandedCourse: string | null;
+  setExpandedCourse: (id: string | null) => void;
+  onStartStudy: (id?: string) => void;
+  onNavigate: (v: string) => void;
+}) {
+  // Mock detail data per course
+  const courseDetails: Record<string, { mastered: string[]; pending: string[]; weaknesses: string[]; recommendation: string }> = {
+    math: {
+      mastered: ['Ecuaciones lineales'],
+      pending: ['Circunferencia'],
+      weaknesses: ['Factorización: Dificultad con trinomios', 'Circunferencia: No se ha iniciado'],
+      recommendation: 'Refuerza Factorización con el Tutor AI antes de avanzar a Circunferencia.',
+    },
+    comm: {
+      mastered: ['Textos argumentativos'],
+      pending: [],
+      weaknesses: [],
+      recommendation: 'Excelente avance. Practica con un simulacro para consolidar.',
+    },
+    science: {
+      mastered: [],
+      pending: ['La célula'],
+      weaknesses: ['La célula: Falta reforzar organelos y ciclo celular'],
+      recommendation: 'Continúa estudiando La célula con el Tutor AI.',
+    },
+    history: {
+      mastered: ['Culturas preincaicas'],
+      pending: [],
+      weaknesses: [],
+      recommendation: 'Buen dominio. Puedes practicar con Flash Cards.',
+    },
+    english: {
+      mastered: [],
+      pending: ['Present Perfect'],
+      weaknesses: ['Present Perfect: Confusión con formas negativas y preguntas'],
+      recommendation: 'Estudia Present Perfect con el Tutor AI para aclarar dudas.',
+    },
+    social: {
+      mastered: [],
+      pending: ['Regiones naturales'],
+      weaknesses: ['Regiones naturales: Recién empezando'],
+      recommendation: 'Inicia el tema con el Tutor AI.',
+    },
+  };
+
   return (
     <section className="px-1 space-y-3">
-      <h2 className="heading-3 text-foreground">Metas semanales</h2>
+      <div className="flex items-center gap-2">
+        <BarChart3 size={18} className="text-primary" />
+        <h2 className="heading-3 text-foreground">Progreso por curso</h2>
+      </div>
       <div className="space-y-2.5">
-        {mockWeeklyGoals.map(goal => (
-          <div key={goal.id} className={cn('stat-card flex items-center gap-3', goal.completed && 'border-mastery-green/30')}>
-            <div className={cn(
-              'w-7 h-7 rounded-full flex items-center justify-center shrink-0',
-              goal.completed ? 'bg-mastery-green/10' : 'bg-muted',
-            )}>
-              {goal.completed
-                ? <CheckCircle2 size={16} className="text-mastery-green" />
-                : <Target size={14} className="text-muted-foreground" />}
+        {courseProgress.map(cp => {
+          const course = courses.find(c => c.id === cp.courseId);
+          const isExpanded = expandedCourse === cp.courseId;
+          const detail = courseDetails[cp.courseId];
+          const statusLabel = cp.mastery >= 80 ? 'Buen dominio' : cp.mastery >= 50 ? 'En progreso' : 'Por reforzar';
+          const statusColor = cp.mastery >= 80 ? 'text-mastery-green' : cp.mastery >= 50 ? 'text-mastery-blue' : 'text-mastery-orange';
+
+          return (
+            <div key={cp.courseId} className="stat-card overflow-hidden">
+              <button
+                onClick={() => setExpandedCourse(isExpanded ? null : cp.courseId)}
+                className="w-full flex items-center gap-4 text-left"
+              >
+                <span className="text-xl w-8 text-center shrink-0">{course?.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-center mb-1">
+                    <p className="text-sm font-medium text-foreground">{cp.name}</p>
+                    <div className="flex items-center gap-2">
+                      <span className={cn('text-xs font-medium', statusColor)}>{statusLabel}</span>
+                      <span className="text-sm font-semibold text-foreground">{cp.mastery}%</span>
+                    </div>
+                  </div>
+                  <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                    <div className={cn('h-full rounded-full', getMasteryBarColor(cp.mastery))} style={{ width: `${cp.mastery}%` }} />
+                  </div>
+                </div>
+                <ChevronDown size={16} className={cn('text-muted-foreground transition-transform shrink-0', isExpanded && 'rotate-180')} />
+              </button>
+
+              <AnimatePresence>
+                {isExpanded && detail && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="pt-4 mt-4 border-t border-border space-y-3">
+                      {detail.mastered.length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium text-mastery-green mb-1">✅ Temas dominados</p>
+                          <p className="text-xs text-muted-foreground">{detail.mastered.join(', ')}</p>
+                        </div>
+                      )}
+                      {detail.pending.length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium text-mastery-orange mb-1">📋 Temas pendientes</p>
+                          <p className="text-xs text-muted-foreground">{detail.pending.join(', ')}</p>
+                        </div>
+                      )}
+                      {detail.weaknesses.length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium text-mastery-red mb-1">⚠️ Puntos débiles detectados</p>
+                          <ul className="text-xs text-muted-foreground space-y-0.5">
+                            {detail.weaknesses.map(w => <li key={w}>• {w}</li>)}
+                          </ul>
+                        </div>
+                      )}
+                      <div className="bg-primary/5 rounded-lg p-3">
+                        <p className="text-xs font-medium text-primary mb-1">💡 Recomendación</p>
+                        <p className="text-xs text-foreground">{detail.recommendation}</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button onClick={() => onStartStudy(cp.courseId)}
+                          className="text-xs px-3 py-1.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors">
+                          Estudiar con Tutor AI
+                        </button>
+                        <button onClick={() => onNavigate('flashcards')}
+                          className="text-xs px-3 py-1.5 rounded-lg border border-border text-foreground font-medium hover:bg-muted transition-colors">
+                          Flash Cards
+                        </button>
+                        <button onClick={() => onNavigate('simulacros')}
+                          className="text-xs px-3 py-1.5 rounded-lg border border-border text-foreground font-medium hover:bg-muted transition-colors">
+                          Simulacro
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className={cn('text-sm', goal.completed ? 'text-mastery-green font-medium line-through' : 'text-foreground')}>
-                {goal.description}
-              </p>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+/* ─── Temas por reforzar ─── */
+function ReinforceSection({ topics, onStartStudy, reinforceDetail, setReinforceDetail }: {
+  topics: [string, number][];
+  onStartStudy: (id?: string) => void;
+  reinforceDetail: string | null;
+  setReinforceDetail: (t: string | null) => void;
+}) {
+  const topicReasons: Record<string, { why: string; what: string; courseId: string }> = {
+    'Factorización': { why: 'Bajo rendimiento en las últimas sesiones de práctica', what: 'Trinomios y diferencia de cuadrados', courseId: 'math' },
+    'Circunferencia': { why: 'No se ha estudiado este tema aún', what: 'Elementos y ángulos inscritos', courseId: 'math' },
+    'Present Perfect': { why: 'Errores frecuentes en formas negativas', what: 'Estructura de oraciones negativas y preguntas', courseId: 'english' },
+    'Regiones naturales': { why: 'Tema recién iniciado, falta profundizar', what: 'Características de Costa, Sierra y Selva', courseId: 'social' },
+  };
+
+  return (
+    <section className="px-1 space-y-3">
+      <div className="flex items-center gap-2">
+        <AlertCircle size={18} className="text-mastery-orange" />
+        <h2 className="heading-3 text-foreground">Temas por reforzar</h2>
+      </div>
+      <div className="space-y-2">
+        {topics.map(([topic, pct]) => {
+          const detail = topicReasons[topic];
+          const isOpen = reinforceDetail === topic;
+
+          return (
+            <div key={topic} className="stat-card overflow-hidden">
+              <button
+                onClick={() => setReinforceDetail(isOpen ? null : topic)}
+                className="w-full flex items-center gap-3 text-left"
+              >
+                <div className={cn(
+                  'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
+                  pct < 25 ? 'bg-mastery-red/10' : 'bg-mastery-orange/10'
+                )}>
+                  <AlertCircle size={14} className={pct < 25 ? 'text-mastery-red' : 'text-mastery-orange'} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">{topic}</p>
+                  <p className="text-xs text-muted-foreground">{pct}% de dominio</p>
+                </div>
+                <ChevronDown size={14} className={cn('text-muted-foreground transition-transform', isOpen && 'rotate-180')} />
+              </button>
+
+              <AnimatePresence>
+                {isOpen && detail && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div className="pt-3 mt-3 border-t border-border space-y-2">
+                      <p className="text-xs text-muted-foreground"><strong className="text-foreground">¿Por qué?</strong> {detail.why}</p>
+                      <p className="text-xs text-muted-foreground"><strong className="text-foreground">¿Qué reforzar?</strong> {detail.what}</p>
+                      <div className="flex gap-2 pt-1">
+                        <button onClick={() => onStartStudy(detail.courseId)}
+                          className="text-xs px-3 py-1.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90">
+                          Estudiar con Tutor AI
+                        </button>
+                        <button onClick={() => onStartStudy(detail.courseId)}
+                          className="text-xs px-3 py-1.5 rounded-lg border border-border text-foreground font-medium hover:bg-muted">
+                          Flash Cards
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-            <div className="flex items-center gap-2 shrink-0 w-28">
-              <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                <div
-                  className={cn('h-full rounded-full transition-all', goal.completed ? 'bg-mastery-green' : 'bg-primary')}
-                  style={{ width: `${Math.min((goal.current / goal.target) * 100, 100)}%` }}
-                />
-              </div>
-              <span className="text-xs text-muted-foreground w-8 text-right">{goal.current}/{goal.target}</span>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+/* ─── Plan recomendado ─── */
+function RecommendedPlan({ onStartStudy, onNavigate }: { onStartStudy: (id?: string) => void; onNavigate: (v: string) => void }) {
+  return (
+    <section className="px-1 space-y-3">
+      <div className="flex items-center gap-2">
+        <TrendingUp size={18} className="text-primary" />
+        <h2 className="heading-3 text-foreground">Plan recomendado</h2>
+      </div>
+      <div className="space-y-2">
+        {recommendedPlan.map((item, i) => (
+          <motion.button
+            key={i}
+            whileHover={{ x: 2 }}
+            onClick={() => {
+              if (item.action === 'tutor') onStartStudy(item.courseId);
+              else onNavigate(item.action);
+            }}
+            className="stat-card flex items-center gap-3 w-full text-left group"
+          >
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <item.icon size={16} className="text-primary" />
             </div>
-          </div>
+            <p className="text-sm text-foreground flex-1">{item.text}</p>
+            <ChevronRight size={14} className="text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+          </motion.button>
         ))}
       </div>
     </section>
   );
 }
 
-/* ─── Reinforcement Chips ─── */
-function ReinforcementChips({ topics, onStartStudy }: { topics: [string, number][]; onStartStudy: (id?: string) => void }) {
+/* ─── Sesiones recientes ─── */
+function RecentActivity() {
+  const recent = recentSessions.slice(0, 3);
+  if (recent.length === 0) return null;
+
   return (
     <section className="px-1 space-y-3">
-      <h2 className="heading-3 text-foreground">Temas por reforzar</h2>
-      <div className="flex flex-wrap gap-2">
-        {topics.map(([topic, pct]) => (
-          <button
-            key={topic}
-            onClick={() => onStartStudy()}
-            className={cn(
-              'inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium transition-all cursor-pointer hover:scale-105',
-              pct < 25
-                ? 'bg-mastery-red/10 text-mastery-red hover:bg-mastery-red/20'
-                : 'bg-mastery-orange/10 text-mastery-orange hover:bg-mastery-orange/20',
-            )}
-          >
-            <Star size={13} />
-            {topic} · {pct}%
-          </button>
-        ))}
+      <h2 className="heading-3 text-foreground">Actividad reciente</h2>
+      <div className="stat-card">
+        <div className="space-y-2">
+          {recent.map(session => (
+            <div key={session.id} className="flex items-center gap-3 py-1.5">
+              <div className="text-lg">{courses.find(c => c.id === session.courseId)?.icon}</div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">{session.topic}</p>
+                <p className="text-xs text-muted-foreground">
+                  {session.courseName} · {session.date.toLocaleDateString('es-PE', { day: 'numeric', month: 'short' })}
+                </p>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-sm font-semibold text-foreground">{session.score}%</p>
+                <p className="text-xs text-muted-foreground">{session.duration} min</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );

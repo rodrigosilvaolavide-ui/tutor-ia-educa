@@ -6,8 +6,6 @@ import CourseSelect from '@/components/student/CourseSelect';
 import TutorChat from '@/components/student/TutorChat';
 import FlashCards from '@/components/student/FlashCards';
 import Simulacros from '@/components/student/Simulacros';
-import MyClass from '@/components/student/MyClass';
-import StudentProfile from '@/components/student/StudentProfile';
 import TeacherView from '@/components/teacher/TeacherView';
 import DirectorView from '@/components/director/DirectorView';
 import { ChatSession } from '@/lib/chat-storage';
@@ -74,8 +72,6 @@ function AppContent() {
       }
       if (currentView === 'flashcards') return <FlashCards />;
       if (currentView === 'simulacros') return <Simulacros />;
-      if (currentView === 'myclass') return <MyClass />;
-      if (currentView === 'profile') return <StudentProfile />;
       return <StudentHome onStartStudy={handleStartStudy} onNavigate={handleNavigate} />;
     }
 
