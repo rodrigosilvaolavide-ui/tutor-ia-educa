@@ -60,15 +60,15 @@ export default function AppLayout({ currentView, onNavigate, children }: AppLayo
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar - Desktop */}
-      <aside className="hidden md:flex flex-col w-64 bg-card border-r border-border">
-        <div className="p-5 border-b border-border">
+      <aside className="hidden md:flex flex-col w-64 bg-sidebar text-sidebar-foreground">
+        <div className="p-5 border-b border-sidebar-border">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
-              <Sparkles size={18} className="text-primary-foreground" />
+            <div className="w-9 h-9 rounded-xl bg-sidebar-primary flex items-center justify-center">
+              <Sparkles size={18} className="text-sidebar-primary-foreground" />
             </div>
             <div>
-              <h1 className="font-heading font-bold text-base text-foreground">StudyAI</h1>
-              <p className="text-xs text-muted-foreground">Tutor Inteligente</p>
+              <h1 className="font-heading font-bold text-base text-sidebar-primary-foreground">StudyAI</h1>
+              <p className="text-xs text-sidebar-foreground/60">Tutor Inteligente</p>
             </div>
           </div>
         </div>
@@ -79,10 +79,10 @@ export default function AppLayout({ currentView, onNavigate, children }: AppLayo
               key={item.id}
               onClick={() => onNavigate(item.id)}
               className={cn(
-                'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors',
                 currentView === item.id
                   ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
               )}
             >
               {item.icon}
@@ -92,23 +92,23 @@ export default function AppLayout({ currentView, onNavigate, children }: AppLayo
         </nav>
 
         {/* Role Switcher */}
-        <div className="p-3 border-t border-border">
+        <div className="p-3 border-t border-sidebar-border">
           <div className="relative">
             <button
               onClick={() => setRoleMenuOpen(!roleMenuOpen)}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted transition-colors"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-sidebar-accent/50 transition-colors"
             >
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary">
+              <div className="w-8 h-8 rounded-full bg-sidebar-primary/20 flex items-center justify-center text-sm font-semibold text-sidebar-primary">
                 {userName[0]}
               </div>
               <div className="flex-1 text-left">
-                <p className="text-sm font-medium text-foreground">{userName}</p>
-                <p className="text-xs text-muted-foreground">{roleLabels[role]}</p>
+                <p className="text-sm font-medium text-sidebar-foreground">{userName}</p>
+                <p className="text-xs text-sidebar-foreground/50">{roleLabels[role]}</p>
               </div>
-              <ChevronDown size={16} className="text-muted-foreground" />
+              <ChevronDown size={16} className="text-sidebar-foreground/50" />
             </button>
             {roleMenuOpen && (
-              <div className="absolute bottom-full left-0 right-0 mb-1 bg-card border border-border rounded-lg shadow-lg py-1 z-50">
+              <div className="absolute bottom-full left-0 right-0 mb-1 bg-card text-foreground border border-border rounded-xl shadow-lg py-1 z-50">
                 <p className="px-3 py-1.5 text-xs text-muted-foreground font-medium">Cambiar vista</p>
                 {(['alumno', 'profesor', 'directivo'] as UserRole[]).map((r) => (
                   <button
