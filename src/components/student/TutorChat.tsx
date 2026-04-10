@@ -142,6 +142,7 @@ export default function TutorChat({ courseId, courseName, topic, onBack, existin
   const [tutorMode, setTutorMode] = useState<TutorMode>((existingSession?.mode as TutorMode) || 'Teoría');
   const [showModeMenu, setShowModeMenu] = useState(false);
   const [sessionId, setSessionId] = useState<string>(existingSession?.id || '');
+  const [activeTab, setActiveTab] = useState<'notes' | 'chat'>('notes');
   const modeMenuRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
