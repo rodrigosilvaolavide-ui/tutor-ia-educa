@@ -348,6 +348,38 @@ export default function TeacherStudents({ onBack, initialStudentId, onClearStude
           </div>
         </div>
 
+        {/* Confusion Signals from Practice */}
+        {(() => {
+          const signals = getConfusionSignals();
+          if (signals.length === 0) return null;
+          return (
+            <div className="stat-card border-mastery-orange/20 bg-mastery-orange/5">
+              <div className="flex items-center gap-2 mb-3">
+                <MessageCircleQuestion size={16} className="text-mastery-orange" />
+                <h3 className="heading-4 text-foreground">Señales de confusión durante práctica</h3>
+              </div>
+              <p className="text-xs text-muted-foreground mb-3">Momentos en que el alumno pidió ayuda al Tutor AI durante Flash Cards o Simulacros</p>
+              <div className="space-y-2">
+                {signals.slice(0, 5).map(s => (
+                  <div key={s.id} className="flex items-start gap-3 px-3 py-2.5 bg-card rounded-lg border border-border">
+                    <div className={cn(
+                      'w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-xs',
+                      s.source === 'flashcards' ? 'bg-accent/10 text-accent' : 'bg-info/10 text-info',
+                    )}>
+                      {s.source === 'flashcards' ? <Layers size={12} /> : <Target size={12} />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-foreground font-medium">{s.studentMessage}</p>
+                      {s.question && <p className="text-xs text-muted-foreground mt-0.5 truncate">Pregunta: {s.question}</p>}
+                      <p className="text-xs text-muted-foreground mt-0.5">{s.courseName} · {s.topic} · {new Date(s.timestamp).toLocaleDateString('es-PE', { day: 'numeric', month: 'short' })}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Recent sessions — clickable */}
         <div className="stat-card">
           <div className="flex items-center justify-between mb-3">
