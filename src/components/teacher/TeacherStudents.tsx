@@ -32,6 +32,18 @@ const mockChatSessions = [
 // Topics the student hasn't studied yet
 const pendingTopics = ['Circunferencia', 'Culturas preincaicas', 'Present Perfect', 'Regiones naturales'];
 
+// Mock per-topic mastery breakdown for students
+const mockTopicMastery: Record<string, { topic: string; unknown: number; learning: number; solid: number; mastered: number }[]> = {
+  default: [
+    { topic: 'Ecuaciones lineales', unknown: 1, learning: 2, solid: 5, mastered: 7 },
+    { topic: 'Factorización', unknown: 4, learning: 5, solid: 3, mastered: 0 },
+    { topic: 'Triángulos', unknown: 2, learning: 3, solid: 4, mastered: 3 },
+    { topic: 'La célula', unknown: 3, learning: 4, solid: 2, mastered: 1 },
+    { topic: 'Textos argumentativos', unknown: 0, learning: 1, solid: 3, mastered: 8 },
+    { topic: 'Present Perfect', unknown: 6, learning: 3, solid: 1, mastered: 0 },
+  ],
+};
+
 interface AppliedFilters {
   section?: string;
   engagement?: string;
