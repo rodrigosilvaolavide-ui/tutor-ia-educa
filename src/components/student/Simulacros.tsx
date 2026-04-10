@@ -213,7 +213,8 @@ export default function Simulacros() {
 
     return (
       <div className="flex flex-col h-full relative">
-        <div className="px-6 pt-4 pb-2">
+        <MasteryBar topic={selectedTopic || q.topic} mastery={mastery} />
+        <div className="px-6 pt-3 pb-2">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-muted-foreground">Pregunta {currentIndex + 1} de {questions.length}</span>
             <span className="text-xs text-muted-foreground">{q.topic}</span>
