@@ -3,7 +3,6 @@ import { mockStudents } from '@/lib/mock-data';
 import { Search, Filter, ArrowLeft, Clock, BookOpen, TrendingUp, AlertTriangle, Sparkles, MessageSquare, X, ChevronRight, ChevronDown, ExternalLink, Layers, Target, MessageCircleQuestion } from 'lucide-react';
 import { getConfusionSignals } from '@/lib/confusion-signals';
 import { cn } from '@/lib/utils';
-import { cn } from '@/lib/utils';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface TeacherStudentsProps {
