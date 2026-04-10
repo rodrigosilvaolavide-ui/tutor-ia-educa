@@ -5,6 +5,7 @@ import { FlashCard } from '@/lib/gamification';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import DoubtDrawer from './DoubtDrawer';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -244,7 +245,7 @@ export default function FlashCards() {
     const card = cards[currentIndex];
 
     return (
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full relative">
         {/* Progress bar */}
         <div className="px-6 pt-4 pb-2">
           <div className="flex items-center justify-between mb-2">
@@ -358,6 +359,12 @@ export default function FlashCards() {
             </motion.div>
           </AnimatePresence>
         </div>
+        <DoubtDrawer
+          courseName={courses.find(c => c.id === selectedCourse)?.name || ''}
+          topic={selectedTopic || 'General'}
+          currentContext={card.question}
+          source="flashcards"
+        />
       </div>
     );
   }

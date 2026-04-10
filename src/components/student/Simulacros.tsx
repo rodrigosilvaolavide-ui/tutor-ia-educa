@@ -5,6 +5,7 @@ import { ChevronRight, CheckCircle, XCircle, Clock, Target, TrendingUp, AlertTri
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import DoubtDrawer from './DoubtDrawer';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -202,7 +203,7 @@ export default function Simulacros() {
     const canSubmit = q.type === 'multiple_choice' ? !!selectedOption : shortAnswer.trim().length > 0;
 
     return (
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full relative">
         <div className="px-6 pt-4 pb-2">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-muted-foreground">Pregunta {currentIndex + 1} de {questions.length}</span>
@@ -255,6 +256,12 @@ export default function Simulacros() {
             </motion.div>
           </AnimatePresence>
         </div>
+        <DoubtDrawer
+          courseName={courses.find(c => c.id === selectedCourse)?.name || ''}
+          topic={selectedTopic || 'General'}
+          currentContext={q.question}
+          source="simulacros"
+        />
       </div>
     );
   }
