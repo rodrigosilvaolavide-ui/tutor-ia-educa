@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { mockStudents } from '@/lib/mock-data';
-import { Search, Filter, ArrowLeft, Clock, BookOpen, TrendingUp, AlertTriangle, Sparkles, MessageSquare, X, ChevronRight, ExternalLink, Layers, Target, MessageCircleQuestion } from 'lucide-react';
+import { Search, Filter, ArrowLeft, Clock, BookOpen, TrendingUp, AlertTriangle, Sparkles, MessageSquare, X, ChevronRight, ChevronDown, ExternalLink, Layers, Target, MessageCircleQuestion } from 'lucide-react';
 import { getConfusionSignals } from '@/lib/confusion-signals';
 import { cn } from '@/lib/utils';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -32,6 +32,18 @@ const mockChatSessions = [
 // Topics the student hasn't studied yet
 const pendingTopics = ['Circunferencia', 'Culturas preincaicas', 'Present Perfect', 'Regiones naturales'];
 
+// Mock per-topic mastery breakdown for students
+const mockTopicMastery: Record<string, { topic: string; unknown: number; learning: number; solid: number; mastered: number }[]> = {
+  default: [
+    { topic: 'Ecuaciones lineales', unknown: 1, learning: 2, solid: 5, mastered: 7 },
+    { topic: 'Factorización', unknown: 4, learning: 5, solid: 3, mastered: 0 },
+    { topic: 'Triángulos', unknown: 2, learning: 3, solid: 4, mastered: 3 },
+    { topic: 'La célula', unknown: 3, learning: 4, solid: 2, mastered: 1 },
+    { topic: 'Textos argumentativos', unknown: 0, learning: 1, solid: 3, mastered: 8 },
+    { topic: 'Present Perfect', unknown: 6, learning: 3, solid: 1, mastered: 0 },
+  ],
+};
+
 interface AppliedFilters {
   section?: string;
   engagement?: string;
@@ -60,6 +72,7 @@ export default function TeacherStudents({ onBack, initialStudentId, onClearStude
   const [filters, setFilters] = useState<AppliedFilters>({});
   const [viewingChats, setViewingChats] = useState(false);
   const [viewingChatDetail, setViewingChatDetail] = useState<string | null>(null);
+  const [showTopicMastery, setShowTopicMastery] = useState(false);
 
   useEffect(() => {
     if (initialStudentId) {
@@ -307,7 +320,47 @@ export default function TeacherStudents({ onBack, initialStudentId, onClearStude
           </div>
         </div>
 
-        {/* AI Summary */}
+        {/* Topic Mastery Breakdown — Expandable */}
+        <div className="stat-card">
+          <button
+            onClick={() => setShowTopicMastery(!showTopicMastery)}
+            className="w-full flex items-center justify-between"
+          >
+            <h3 className="heading-4 text-foreground flex items-center gap-2">
+              <Layers size={16} className="text-primary" /> Dominio por tema
+            </h3>
+            <ChevronDown size={16} className={cn('text-muted-foreground transition-transform', showTopicMastery && 'rotate-180')} />
+          </button>
+          {showTopicMastery && (
+            <div className="mt-4 space-y-3">
+              {(mockTopicMastery.default).map(t => {
+                const total = t.unknown + t.learning + t.solid + t.mastered;
+                return (
+                  <div key={t.topic} className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-foreground">{t.topic}</span>
+                      <span className="text-xs text-muted-foreground">{total} tarjetas</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 h-5">
+                      {t.unknown > 0 && <div className="h-full bg-mastery-red/20 rounded" style={{ flex: t.unknown }} title={`Desconocido: ${t.unknown}`} />}
+                      {t.learning > 0 && <div className="h-full bg-mastery-orange/30 rounded" style={{ flex: t.learning }} title={`Aprendiendo: ${t.learning}`} />}
+                      {t.solid > 0 && <div className="h-full bg-mastery-blue/30 rounded" style={{ flex: t.solid }} title={`Base sólida: ${t.solid}`} />}
+                      {t.mastered > 0 && <div className="h-full bg-mastery-green/30 rounded" style={{ flex: t.mastered }} title={`Dominado: ${t.mastered}`} />}
+                    </div>
+                    <div className="flex gap-3 text-xs text-muted-foreground">
+                      <span>🔴 {t.unknown}</span>
+                      <span>🟠 {t.learning}</span>
+                      <span>🔵 {t.solid}</span>
+                      <span>🟢 {t.mastered}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+
         <div className="stat-card border-primary/20 bg-primary/5">
           <div className="flex items-center gap-2 mb-3">
             <Sparkles size={16} className="text-primary" />

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import DoubtDrawer from './DoubtDrawer';
+import MasteryBar, { initMastery, updateCardMastery, type MasteryState, type CardMasteryMap } from './MasteryBar';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -64,6 +65,8 @@ export default function FlashCards() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [cards, setCards] = useState<FlashCard[]>([]);
   const [evaluating, setEvaluating] = useState(false);
+  const [mastery, setMastery] = useState<MasteryState>(initMastery(0));
+  const [cardMasteryMap, setCardMasteryMap] = useState<CardMasteryMap>({});
 
   const startSession = async () => {
     const course = courses.find(c => c.id === selectedCourse);
@@ -78,6 +81,8 @@ export default function FlashCards() {
       setFlipped(false);
       setReviewResults([]);
       setTestResults([]);
+      setMastery(initMastery(generated.length));
+      setCardMasteryMap({});
       setPhase('session');
     } catch (e) {
       console.error(e);
@@ -87,7 +92,11 @@ export default function FlashCards() {
   };
 
   const handleReviewRate = (rating: 'knew' | 'partial' | 'didnt_know') => {
-    setReviewResults(prev => [...prev, { card: cards[currentIndex], rating }]);
+    const card = cards[currentIndex];
+    setReviewResults(prev => [...prev, { card, rating }]);
+    const updated = updateCardMastery(card.id, rating, cardMasteryMap, mastery);
+    setMastery(updated.mastery);
+    setCardMasteryMap(updated.cardMap);
     nextCard();
   };
 
@@ -99,6 +108,10 @@ export default function FlashCards() {
     try {
       const result = await evaluateAnswer(card.question, card.answer, testAnswer);
       setTestResults(prev => [...prev, { card, answer: testAnswer, rating: result.rating, feedback: result.feedback }]);
+      const masteryRating = result.rating === 'correct' ? 'correct' : result.rating === 'partial' ? 'partial' : 'incorrect';
+      const updated = updateCardMastery(card.id, masteryRating as any, cardMasteryMap, mastery);
+      setMastery(updated.mastery);
+      setCardMasteryMap(updated.cardMap);
       setShowFeedback(true);
       setTestAnswer('');
     } catch (e) {
@@ -108,6 +121,9 @@ export default function FlashCards() {
       const rating = correct ? 'correct' : testAnswer.length > 15 ? 'partial' : 'incorrect';
       const feedback = rating === 'correct' ? '¡Correcto! Bien hecho.' : rating === 'partial' ? 'Parcialmente correcto. Revisa los detalles.' : 'Incorrecto. Revisa la respuesta correcta.';
       setTestResults(prev => [...prev, { card, answer: testAnswer, rating, feedback }]);
+      const updated = updateCardMastery(card.id, rating as any, cardMasteryMap, mastery);
+      setMastery(updated.mastery);
+      setCardMasteryMap(updated.cardMap);
       setShowFeedback(true);
       setTestAnswer('');
     } finally {
@@ -246,8 +262,10 @@ export default function FlashCards() {
 
     return (
       <div className="flex flex-col h-full relative">
+        {/* Mastery Bar */}
+        <MasteryBar topic={selectedTopic || 'General'} mastery={mastery} />
         {/* Progress bar */}
-        <div className="px-6 pt-4 pb-2">
+        <div className="px-6 pt-3 pb-2">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-muted-foreground">{currentIndex + 1} de {cards.length}</span>
             <span className="text-xs font-medium text-foreground">{mode === 'review' ? 'Repaso' : 'Evaluación'}</span>

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import DoubtDrawer from './DoubtDrawer';
+import MasteryBar, { initMastery, updateCardMastery, type MasteryState, type CardMasteryMap } from './MasteryBar';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -58,6 +59,8 @@ export default function Simulacros() {
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [endTime, setEndTime] = useState<Date | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [mastery, setMastery] = useState<MasteryState>(initMastery(0));
+  const [cardMasteryMap, setCardMasteryMap] = useState<CardMasteryMap>({});
 
   const startSimulacro = async () => {
     const course = courses.find(c => c.id === selectedCourse);
@@ -71,6 +74,8 @@ export default function Simulacros() {
       setCurrentIndex(0);
       setAnswers([]);
       setStartTime(new Date());
+      setMastery(initMastery(generated.length));
+      setCardMasteryMap({});
       setPhase('session');
     } catch (e) {
       console.error(e);
@@ -107,6 +112,10 @@ export default function Simulacros() {
     }
 
     setAnswers(prev => [...prev, { questionId: q.id, answer, correct, feedback }]);
+    const masteryRating = correct ? 'correct' : 'incorrect';
+    const updated = updateCardMastery(q.id, masteryRating, cardMasteryMap, mastery);
+    setMastery(updated.mastery);
+    setCardMasteryMap(updated.cardMap);
     setSelectedOption('');
     setShortAnswer('');
 
@@ -204,7 +213,8 @@ export default function Simulacros() {
 
     return (
       <div className="flex flex-col h-full relative">
-        <div className="px-6 pt-4 pb-2">
+        <MasteryBar topic={selectedTopic || q.topic} mastery={mastery} />
+        <div className="px-6 pt-3 pb-2">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-muted-foreground">Pregunta {currentIndex + 1} de {questions.length}</span>
             <span className="text-xs text-muted-foreground">{q.topic}</span>
