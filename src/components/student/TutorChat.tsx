@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Send, ArrowLeft, Sparkles, BookOpen, Lightbulb, PenTool, Search, StickyNote, MessageCircle, ChevronDown, Check, X } from 'lucide-react';
+import { Send, ArrowLeft, Sparkles, BookOpen, Lightbulb, PenTool, Search, StickyNote, MessageCircle, ChevronDown, Check, X, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { ChatMessage } from '@/lib/types';
 import { ChatSession, createSession, updateSessionMessages } from '@/lib/chat-storage';
 import { recordChatWithoutNotes, didReadNotesFirst } from '@/lib/notes-tracking';
@@ -153,7 +153,7 @@ export default function TutorChat({ courseId, courseName, topic, onBack, existin
   const [messages, setMessages] = useState<ChatMessage[]>(existingSession?.messages || []);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [showPanel, setShowPanel] = useState(false);
+  const [showPanel, setShowPanel] = useState(true);
   const [hasStarted, setHasStarted] = useState(!!existingSession);
   const [tutorMode, setTutorMode] = useState<TutorMode>((existingSession?.mode as TutorMode) || 'Teoría');
   const [showModeMenu, setShowModeMenu] = useState(false);
@@ -289,76 +289,86 @@ export default function TutorChat({ courseId, courseName, topic, onBack, existin
   }, [courseName, topic]);
 
   return (
-    <div className="flex h-full">
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* ─── Topbar ─── */}
-        <div className="border-b border-border bg-card">
-          <div className="flex items-center gap-3 px-4 md:px-6 h-14">
-            <button onClick={onBack} className="p-1.5 hover:bg-muted rounded-lg transition-colors shrink-0">
-              <ArrowLeft size={18} />
-            </button>
+    <div className="flex flex-col h-full">
+      {/* ─── Unified Topbar spanning full width ─── */}
+      <div className="border-b border-border bg-card">
+        <div className="flex items-center gap-3 px-4 md:px-6 h-14">
+          <button onClick={onBack} className="p-1.5 hover:bg-muted rounded-lg transition-colors shrink-0">
+            <ArrowLeft size={18} />
+          </button>
 
-            <div className="flex-1 min-w-0 flex items-center gap-3">
-              <div className="min-w-0">
-                <p className="font-heading font-semibold text-sm text-foreground truncate">{courseName} — {topicName}</p>
-              </div>
+          <div className="flex-1 min-w-0 flex items-center gap-3">
+            <div className="min-w-0">
+              <p className="font-heading font-semibold text-sm text-foreground truncate">{courseName} — {topicName}</p>
             </div>
-
-            {/* Mode selector - only in chat tab */}
-            {activeTab === 'chat' && (
-              <div className="relative" ref={modeMenuRef}>
-                <button
-                  onClick={() => setShowModeMenu(!showModeMenu)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:bg-muted/80 rounded-full text-xs font-medium text-foreground transition-colors"
-                >
-                  {tutorModes.find(m => m.value === tutorMode)?.icon}
-                  <span className="hidden sm:inline">{tutorMode}</span>
-                  <ChevronDown size={12} className={cn("transition-transform", showModeMenu && "rotate-180")} />
-                </button>
-                <AnimatePresence>
-                  {showModeMenu && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -4 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute right-0 top-full mt-1.5 w-56 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden"
-                    >
-                      <div className="p-1.5">
-                        {tutorModes.map((mode) => (
-                          <button
-                            key={mode.value}
-                            onClick={() => { setTutorMode(mode.value); setShowModeMenu(false); }}
-                            className={cn(
-                              "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors",
-                              tutorMode === mode.value ? "bg-primary/10 text-primary" : "hover:bg-muted text-foreground"
-                            )}
-                          >
-                            <span className="shrink-0">{mode.icon}</span>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium">{mode.value}</p>
-                              <p className="text-xs text-muted-foreground">{mode.description}</p>
-                            </div>
-                            {tutorMode === mode.value && <Check size={14} className="shrink-0 text-primary" />}
-                          </button>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            )}
-
-            <button
-              onClick={() => setShowPanel(!showPanel)}
-              className="md:hidden p-2 hover:bg-muted rounded-lg transition-colors"
-            >
-              <BookOpen size={18} />
-            </button>
           </div>
 
-          {/* Tabs */}
-          <div className="flex px-4 md:px-6 gap-1">
+          {/* Mode selector - only in chat tab */}
+          {activeTab === 'chat' && (
+            <div className="relative" ref={modeMenuRef}>
+              <button
+                onClick={() => setShowModeMenu(!showModeMenu)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:bg-muted/80 rounded-full text-xs font-medium text-foreground transition-colors"
+              >
+                {tutorModes.find(m => m.value === tutorMode)?.icon}
+                <span className="hidden sm:inline">{tutorMode}</span>
+                <ChevronDown size={12} className={cn("transition-transform", showModeMenu && "rotate-180")} />
+              </button>
+              <AnimatePresence>
+                {showModeMenu && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 top-full mt-1.5 w-56 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden"
+                  >
+                    <div className="p-1.5">
+                      {tutorModes.map((mode) => (
+                        <button
+                          key={mode.value}
+                          onClick={() => { setTutorMode(mode.value); setShowModeMenu(false); }}
+                          className={cn(
+                            "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors",
+                            tutorMode === mode.value ? "bg-primary/10 text-primary" : "hover:bg-muted text-foreground"
+                          )}
+                        >
+                          <span className="shrink-0">{mode.icon}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium">{mode.value}</p>
+                            <p className="text-xs text-muted-foreground">{mode.description}</p>
+                          </div>
+                          {tutorMode === mode.value && <Check size={14} className="shrink-0 text-primary" />}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
+          {/* Panel toggle for desktop */}
+          <button
+            onClick={() => setShowPanel(!showPanel)}
+            className="hidden md:flex p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+            title={showPanel ? 'Ocultar panel' : 'Mostrar panel'}
+          >
+            {showPanel ? <PanelRightClose size={18} /> : <PanelRightOpen size={18} />}
+          </button>
+
+          {/* Panel toggle for mobile */}
+          <button
+            onClick={() => setShowPanel(!showPanel)}
+            className="md:hidden p-2 hover:bg-muted rounded-lg transition-colors"
+          >
+            <BookOpen size={18} />
+          </button>
+        </div>
+
+        {/* Tabs row - spans full width with aligned border */}
+        <div className="flex">
+          <div className="flex-1 flex px-4 md:px-6 gap-1">
             <button
               onClick={() => setActiveTab('notes')}
               className={cn(
@@ -384,144 +394,197 @@ export default function TutorChat({ courseId, courseName, topic, onBack, existin
               Chatear con Tutor
             </button>
           </div>
+          {/* Panel header aligned with tabs */}
+          <AnimatePresence>
+            {showPanel && (
+              <motion.div
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: 288, opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                transition={{ duration: 0.25, ease: 'easeInOut' }}
+                className="hidden md:flex items-center border-l border-border px-4 overflow-hidden"
+              >
+                <h3 className="font-heading font-semibold text-sm whitespace-nowrap">Panel de estudio</h3>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-
-        {activeTab === 'notes' ? (
-          <TopicNotes courseName={courseName} topic={topic || 'General'} onGoToChat={handleSwitchToChat} />
-        ) : (
-          <>
-            {/* Messages */}
-            <div className="flex-1 overflow-auto px-4 md:px-6 py-4 space-y-4">
-              <AnimatePresence>
-                {messages.map((msg) => (
-                  <motion.div
-                    key={msg.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className={cn('flex', msg.role === 'user' ? 'justify-end' : 'justify-start')}
-                  >
-                    <div className={cn(
-                      'max-w-[85%] md:max-w-[70%] rounded-2xl px-4 py-3 text-sm leading-relaxed',
-                      msg.role === 'user'
-                        ? 'bg-primary text-primary-foreground rounded-br-md'
-                        : 'bg-card border border-border rounded-bl-md'
-                    )}>
-                      {msg.role === 'assistant' ? (
-                        <div className="flex gap-3">
-                          <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                            <Sparkles size={14} className="text-primary" />
-                          </div>
-                          <div className="prose prose-sm max-w-none text-foreground [&_p]:mb-2 [&_p:last-child]:mb-0 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-lg [&_strong]:text-foreground">
-                            <ReactMarkdown>{msg.content}</ReactMarkdown>
-                          </div>
-                        </div>
-                      ) : (
-                        <span>{msg.content}</span>
-                      )}
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-              {isTyping && messages.length === 0 && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Sparkles size={14} className="text-primary animate-pulse-soft" />
-                  </div>
-                  <div className="bg-card border border-border rounded-2xl rounded-bl-md px-4 py-3">
-                    <div className="flex gap-1">
-                      <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-
-            {/* Input */}
-            <div className="px-4 md:px-6 pb-4 pt-2">
-              <div className="flex items-end gap-2 bg-card border border-border rounded-2xl p-2 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/40 transition-all">
-                <textarea
-                  ref={inputRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Escribe tu pregunta o respuesta..."
-                  rows={1}
-                  className="flex-1 bg-transparent border-none outline-none resize-none text-sm text-foreground placeholder:text-muted-foreground px-2 py-1.5 max-h-32"
-                />
-                <button onClick={() => handleSend()} disabled={!input.trim() || isTyping} className="p-2 rounded-xl bg-primary text-primary-foreground disabled:opacity-40 hover:bg-primary/90 transition-colors shrink-0">
-                  <Send size={16} />
-                </button>
-              </div>
-            </div>
-          </>
-        )}
       </div>
 
-      {/* ─── Study Panel (sidebar) ─── */}
-      <div className={cn(
-        'border-l border-border bg-card w-72 flex-col',
-        showPanel ? 'flex absolute right-0 top-0 bottom-0 z-40 md:relative' : 'hidden md:flex'
-      )}>
-        <div className="flex items-center justify-between p-4 border-b border-border">
-          <h3 className="font-heading font-semibold text-sm">Panel de estudio</h3>
-          <button onClick={() => setShowPanel(false)} className="md:hidden p-1 hover:bg-muted rounded">
-            <X size={16} />
-          </button>
-        </div>
-        <div className="flex-1 overflow-auto p-4 space-y-5">
-          {/* Tema actual */}
-          <div>
-            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest mb-1.5">Tema actual</p>
-            <p className="text-base font-heading font-semibold text-foreground leading-snug">{courseName} — {topicName}</p>
-          </div>
-
-          {/* Objetivo de sesión */}
-          <div>
-            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest mb-1.5">Objetivo de la sesión</p>
-            <p className="text-xs text-foreground leading-relaxed">{objective}</p>
-          </div>
-
-          {/* Progreso de sesión */}
-          {subtopics.length > 0 && (
-            <div>
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest mb-2">Progreso de la sesión</p>
-              <div className="w-full h-2 bg-muted rounded-full overflow-hidden mb-3">
-                <div
-                  className="h-full rounded-full bg-primary transition-all duration-500"
-                  style={{ width: `${sessionProgress.pct}%` }}
-                />
-              </div>
-              <div className="space-y-1">
-                {subtopics.map((sub, i) => {
-                  const isDone = i < sessionProgress.currentIdx;
-                  const isCurrent = i === sessionProgress.currentIdx;
-                  return (
-                    <div key={sub} className={cn(
-                      'flex items-center gap-2 text-xs px-2.5 py-1.5 rounded-lg transition-colors',
-                      isCurrent ? 'bg-primary/10 text-primary font-medium' :
-                      isDone ? 'text-muted-foreground' : 'text-muted-foreground/60'
-                    )}>
-                      <span className={cn(
-                        'w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0',
-                        isDone ? 'bg-mastery-green/20 text-mastery-green' :
-                        isCurrent ? 'bg-primary/20 text-primary ring-2 ring-primary/30' :
-                        'bg-muted text-muted-foreground/50'
+      {/* ─── Main content area ─── */}
+      <div className="flex flex-1 min-h-0">
+        {/* Left: notes or chat */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {activeTab === 'notes' ? (
+            <TopicNotes courseName={courseName} topic={topic || 'General'} onGoToChat={handleSwitchToChat} />
+          ) : (
+            <>
+              {/* Messages */}
+              <div className="flex-1 overflow-auto px-4 md:px-6 py-4 space-y-4">
+                <AnimatePresence>
+                  {messages.map((msg) => (
+                    <motion.div
+                      key={msg.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className={cn('flex', msg.role === 'user' ? 'justify-end' : 'justify-start')}
+                    >
+                      <div className={cn(
+                        'max-w-[85%] md:max-w-[70%] rounded-2xl px-4 py-3 text-sm leading-relaxed',
+                        msg.role === 'user'
+                          ? 'bg-primary text-primary-foreground rounded-br-md'
+                          : 'bg-card border border-border rounded-bl-md'
                       )}>
-                        {isDone ? '✓' : i + 1}
-                      </span>
-                      <span className={isDone ? 'line-through' : ''}>{sub}</span>
+                        {msg.role === 'assistant' ? (
+                          <div className="flex gap-3">
+                            <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                              <Sparkles size={14} className="text-primary" />
+                            </div>
+                            <div className="prose prose-sm max-w-none text-foreground [&_p]:mb-2 [&_p:last-child]:mb-0 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-lg [&_strong]:text-foreground">
+                              <ReactMarkdown>{msg.content}</ReactMarkdown>
+                            </div>
+                          </div>
+                        ) : (
+                          <span>{msg.content}</span>
+                        )}
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+                {isTyping && messages.length === 0 && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-3">
+                    <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Sparkles size={14} className="text-primary animate-pulse-soft" />
                     </div>
-                  );
-                })}
+                    <div className="bg-card border border-border rounded-2xl rounded-bl-md px-4 py-3">
+                      <div className="flex gap-1">
+                        <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+                <div ref={messagesEndRef} />
               </div>
-            </div>
+
+              {/* Input */}
+              <div className="px-4 md:px-6 pb-4 pt-2">
+                <div className="flex items-end gap-2 bg-card border border-border rounded-2xl p-2 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/40 transition-all">
+                  <textarea
+                    ref={inputRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Escribe tu pregunta o respuesta..."
+                    rows={1}
+                    className="flex-1 bg-transparent border-none outline-none resize-none text-sm text-foreground placeholder:text-muted-foreground px-2 py-1.5 max-h-32"
+                  />
+                  <button onClick={() => handleSend()} disabled={!input.trim() || isTyping} className="p-2 rounded-xl bg-primary text-primary-foreground disabled:opacity-40 hover:bg-primary/90 transition-colors shrink-0">
+                    <Send size={16} />
+                  </button>
+                </div>
+              </div>
+            </>
           )}
         </div>
+
+        {/* ─── Study Panel (sidebar drawer) ─── */}
+        {/* Mobile overlay */}
+        <AnimatePresence>
+          {showPanel && (
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ duration: 0.25, ease: 'easeInOut' }}
+              className="md:hidden fixed right-0 top-0 bottom-0 z-40 w-72 bg-card border-l border-border flex flex-col"
+            >
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <h3 className="font-heading font-semibold text-sm">Panel de estudio</h3>
+                <button onClick={() => setShowPanel(false)} className="p-1 hover:bg-muted rounded">
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="flex-1 overflow-auto p-4 space-y-5">
+                {renderPanelContent()}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Desktop animated panel */}
+        <AnimatePresence>
+          {showPanel && (
+            <motion.div
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 288, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ duration: 0.25, ease: 'easeInOut' }}
+              className="hidden md:flex flex-col border-l border-border bg-card overflow-hidden"
+            >
+              <div className="flex-1 overflow-auto p-4 space-y-5 w-72">
+                {renderPanelContent()}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
+
+  function renderPanelContent() {
+    return (
+      <>
+        {/* Tema actual */}
+        <div>
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest mb-1.5">Tema actual</p>
+          <p className="text-base font-heading font-semibold text-foreground leading-snug">{courseName} — {topicName}</p>
+        </div>
+
+        {/* Objetivo de sesión */}
+        <div>
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest mb-1.5">Objetivo de la sesión</p>
+          <p className="text-xs text-foreground leading-relaxed">{objective}</p>
+        </div>
+
+        {/* Progreso de sesión */}
+        {subtopics.length > 0 && (
+          <div>
+            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest mb-2">Progreso de la sesión</p>
+            <div className="w-full h-2 bg-muted rounded-full overflow-hidden mb-3">
+              <div
+                className="h-full rounded-full bg-primary transition-all duration-500"
+                style={{ width: `${sessionProgress.pct}%` }}
+              />
+            </div>
+            <div className="space-y-1">
+              {subtopics.map((sub, i) => {
+                const isDone = i < sessionProgress.currentIdx;
+                const isCurrent = i === sessionProgress.currentIdx;
+                return (
+                  <div key={sub} className={cn(
+                    'flex items-center gap-2 text-xs px-2.5 py-1.5 rounded-lg transition-colors',
+                    isCurrent ? 'bg-primary/10 text-primary font-medium' :
+                    isDone ? 'text-muted-foreground' : 'text-muted-foreground/60'
+                  )}>
+                    <span className={cn(
+                      'w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0',
+                      isDone ? 'bg-mastery-green/20 text-mastery-green' :
+                      isCurrent ? 'bg-primary/20 text-primary ring-2 ring-primary/30' :
+                      'bg-muted text-muted-foreground/50'
+                    )}>
+                      {isDone ? '✓' : i + 1}
+                    </span>
+                    <span className={isDone ? 'line-through' : ''}>{sub}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }
 }
