@@ -152,7 +152,7 @@ const topicSubtopics: Record<string, string[]> = {
   'Regiones naturales': ['Costa', 'Sierra', 'Selva'],
 };
 
-export default function TutorChat({ courseId, courseName, topic, onBack, existingSession }: TutorChatProps) {
+export default function TutorChat({ courseId, courseName, topic, onBack, existingSession, immersiveMode, onToggleSidebar, sidebarCollapsed }: TutorChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>(existingSession?.messages || []);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
