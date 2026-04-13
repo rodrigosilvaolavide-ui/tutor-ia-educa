@@ -2,10 +2,9 @@ import { useState } from 'react';
 import { RoleProvider, useRole } from '@/contexts/RoleContext';
 import AppLayout from '@/components/layout/AppLayout';
 import StudentHome from '@/components/student/StudentHome';
-import CourseSelect from '@/components/student/CourseSelect';
-import TutorChat from '@/components/student/TutorChat';
 import FlashCards from '@/components/student/FlashCards';
 import Simulacros from '@/components/student/Simulacros';
+import TutorMode from '@/components/student/TutorMode';
 import TeacherView from '@/components/teacher/TeacherView';
 import DirectorView from '@/components/director/DirectorView';
 import { ChatSession } from '@/lib/chat-storage';
@@ -13,66 +12,53 @@ import { ChatSession } from '@/lib/chat-storage';
 function AppContent() {
   const { role } = useRole();
   const [currentView, setCurrentView] = useState('home');
-  const [chatState, setChatState] = useState<{ courseId: string; courseName: string; topic?: string; session?: ChatSession } | null>(null);
-  const [selectingCourse, setSelectingCourse] = useState<string | undefined>(undefined);
-  const [showCourseSelect, setShowCourseSelect] = useState(false);
+  const [tutorState, setTutorState] = useState<{
+    active: boolean;
+    courseId?: string;
+    session?: ChatSession;
+    topic?: string;
+  }>({ active: false });
 
   const handleNavigate = (view: string) => {
     setCurrentView(view);
-    setChatState(null);
-    setShowCourseSelect(false);
+    setTutorState({ active: false });
   };
 
   const handleStartStudy = (courseId?: string) => {
-    if (courseId) {
-      setSelectingCourse(courseId);
-    } else {
-      setSelectingCourse(undefined);
-    }
-    setShowCourseSelect(true);
-    setCurrentView('tutor');
-  };
-
-  const handleSelectCourse = (courseId: string, courseName: string, topic?: string) => {
-    setChatState({ courseId, courseName, topic });
-    setShowCourseSelect(false);
+    setTutorState({ active: true, courseId });
   };
 
   const handleResumeSession = (session: ChatSession) => {
-    setChatState({
-      courseId: session.courseId,
-      courseName: session.courseName,
-      topic: session.topic,
-      session,
-    });
-    setCurrentView('tutor');
+    setTutorState({ active: true, session });
   };
+
+  const handleExitTutor = () => {
+    setTutorState({ active: false });
+    setCurrentView('home');
+  };
+
+  // Immersive Tutor AI mode — bypasses AppLayout entirely
+  if (role === 'alumno' && (tutorState.active || currentView === 'tutor')) {
+    return (
+      <TutorMode
+        onExit={handleExitTutor}
+        initialCourseId={tutorState.courseId}
+        initialSession={tutorState.session}
+        initialTopic={tutorState.topic}
+      />
+    );
+  }
 
   const renderContent = () => {
     if (role === 'alumno') {
-      if (chatState) {
-        return (
-          <TutorChat
-            courseId={chatState.courseId}
-            courseName={chatState.courseName}
-            topic={chatState.topic}
-            onBack={() => { setChatState(null); setShowCourseSelect(true); }}
-            existingSession={chatState.session}
-          />
-        );
-      }
-      if (currentView === 'tutor' || showCourseSelect) {
-        return (
-          <CourseSelect
-            onSelectCourse={handleSelectCourse}
-            onBack={() => { setShowCourseSelect(false); setCurrentView('home'); }}
-            initialCourseId={selectingCourse}
-          />
-        );
-      }
       if (currentView === 'flashcards') return <FlashCards />;
       if (currentView === 'simulacros') return <Simulacros />;
-      return <StudentHome onStartStudy={handleStartStudy} onNavigate={handleNavigate} />;
+      return (
+        <StudentHome
+          onStartStudy={handleStartStudy}
+          onNavigate={handleNavigate}
+        />
+      );
     }
 
     if (role === 'profesor') {

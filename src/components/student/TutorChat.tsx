@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Send, ArrowLeft, Sparkles, BookOpen, Lightbulb, PenTool, Search, StickyNote, MessageCircle, ChevronDown, Check, X, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { Send, ArrowLeft, Sparkles, BookOpen, Lightbulb, PenTool, Search, StickyNote, MessageCircle, ChevronDown, ChevronRight, Check, X, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { ChatMessage } from '@/lib/types';
 import { ChatSession, createSession, updateSessionMessages } from '@/lib/chat-storage';
 import { recordChatWithoutNotes, didReadNotesFirst } from '@/lib/notes-tracking';
@@ -16,6 +16,9 @@ interface TutorChatProps {
   topic?: string;
   onBack: () => void;
   existingSession?: ChatSession;
+  immersiveMode?: boolean;
+  onToggleSidebar?: () => void;
+  sidebarCollapsed?: boolean;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/tutor-chat`;
@@ -149,7 +152,7 @@ const topicSubtopics: Record<string, string[]> = {
   'Regiones naturales': ['Costa', 'Sierra', 'Selva'],
 };
 
-export default function TutorChat({ courseId, courseName, topic, onBack, existingSession }: TutorChatProps) {
+export default function TutorChat({ courseId, courseName, topic, onBack, existingSession, immersiveMode, onToggleSidebar, sidebarCollapsed }: TutorChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>(existingSession?.messages || []);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -293,9 +296,16 @@ export default function TutorChat({ courseId, courseName, topic, onBack, existin
       {/* ─── Unified Topbar spanning full width ─── */}
       <div className="border-b border-border bg-card">
         <div className="flex items-center gap-3 px-4 md:px-6 h-14">
-          <button onClick={onBack} className="p-1.5 hover:bg-muted rounded-lg transition-colors shrink-0">
-            <ArrowLeft size={18} />
-          </button>
+          {immersiveMode && onToggleSidebar && (
+            <button onClick={onToggleSidebar} className="hidden md:flex p-1.5 hover:bg-muted rounded-lg transition-colors shrink-0 text-muted-foreground hover:text-foreground">
+              {sidebarCollapsed ? <ChevronRight size={18} /> : <ArrowLeft size={18} />}
+            </button>
+          )}
+          {!immersiveMode && (
+            <button onClick={onBack} className="p-1.5 hover:bg-muted rounded-lg transition-colors shrink-0">
+              <ArrowLeft size={18} />
+            </button>
+          )}
 
           <div className="flex-1 min-w-0 flex items-center gap-3">
             <div className="min-w-0">
