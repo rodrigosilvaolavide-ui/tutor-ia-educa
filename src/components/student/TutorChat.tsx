@@ -16,6 +16,9 @@ interface TutorChatProps {
   topic?: string;
   onBack: () => void;
   existingSession?: ChatSession;
+  immersiveMode?: boolean;
+  onToggleSidebar?: () => void;
+  sidebarCollapsed?: boolean;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/tutor-chat`;
