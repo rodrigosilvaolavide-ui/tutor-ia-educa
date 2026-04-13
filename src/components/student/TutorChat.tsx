@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Send, ArrowLeft, Sparkles, BookOpen, Lightbulb, PenTool, Search, StickyNote, MessageCircle, ChevronDown, Check, X } from 'lucide-react';
+import { Send, ArrowLeft, Sparkles, BookOpen, Lightbulb, PenTool, Search, StickyNote, MessageCircle, ChevronDown, Check, X, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { ChatMessage } from '@/lib/types';
 import { ChatSession, createSession, updateSessionMessages } from '@/lib/chat-storage';
 import { recordChatWithoutNotes, didReadNotesFirst } from '@/lib/notes-tracking';
