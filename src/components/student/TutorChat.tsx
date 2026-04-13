@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, ArrowLeft, Sparkles, BookOpen, Lightbulb, PenTool, ListChecks, HelpCircle, FileText, ChevronRight, X, AlertCircle, ChevronDown, Check, Search, StickyNote, MessageCircle } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { Send, ArrowLeft, Sparkles, BookOpen, Lightbulb, PenTool, Search, StickyNote, MessageCircle, ChevronDown, Check, X } from 'lucide-react';
 import { ChatMessage } from '@/lib/types';
 import { ChatSession, createSession, updateSessionMessages } from '@/lib/chat-storage';
 import { recordChatWithoutNotes, didReadNotesFirst } from '@/lib/notes-tracking';
+import { courses } from '@/lib/mock-data';
 import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -16,16 +17,6 @@ interface TutorChatProps {
   onBack: () => void;
   existingSession?: ChatSession;
 }
-
-const quickActions = [
-  { label: 'Explícamelo fácil', icon: <Lightbulb size={14} /> },
-  { label: 'Dame un ejemplo', icon: <BookOpen size={14} /> },
-  { label: 'Evalúame', icon: <PenTool size={14} /> },
-  { label: 'Dame 3 ejercicios', icon: <ListChecks size={14} /> },
-  { label: 'Paso a paso', icon: <ChevronRight size={14} /> },
-  { label: 'Dame una pista', icon: <HelpCircle size={14} /> },
-  { label: 'Resúmeme este tema', icon: <FileText size={14} /> },
-];
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/tutor-chat`;
 
@@ -113,7 +104,6 @@ async function streamChat({
     }
   }
 
-  // Final flush
   if (textBuffer.trim()) {
     for (let raw of textBuffer.split('\n')) {
       if (!raw) continue;
@@ -133,6 +123,32 @@ async function streamChat({
   onDone();
 }
 
+/* ─── Session objectives (well-written, pedagogical) ─── */
+const sessionObjectives: Record<string, string> = {
+  'Ecuaciones lineales': 'Comprender cómo resolver ecuaciones de primer grado, identificar las propiedades de igualdad y aplicar el despeje de variables en problemas contextualizados.',
+  'Factorización': 'Dominar las técnicas de factor común, diferencia de cuadrados y trinomio cuadrado perfecto para simplificar expresiones algebraicas.',
+  'Triángulos': 'Entender la clasificación de triángulos por lados y ángulos, aplicar el Teorema de Pitágoras y resolver problemas de geometría práctica.',
+  'Circunferencia': 'Identificar los elementos de la circunferencia, calcular ángulos inscritos y centrales, y resolver problemas de longitud y área.',
+  'Textos argumentativos': 'Reconocer la estructura de un texto argumentativo, identificar tesis y argumentos, y detectar falacias lógicas comunes.',
+  'La célula': 'Comprender la estructura celular, diferenciar los organelos y sus funciones, y entender las fases del ciclo celular.',
+  'Culturas preincaicas': 'Analizar las principales culturas preincaicas del Perú, sus aportes tecnológicos y su organización social y política.',
+  'Present Perfect': 'Dominar la construcción de oraciones afirmativas, negativas e interrogativas en Present Perfect, y distinguir su uso frente al pasado simple.',
+  'Regiones naturales': 'Identificar las características geográficas, climáticas y económicas de las regiones Costa, Sierra y Selva del Perú.',
+};
+
+/* ─── Subtopics for session progress ─── */
+const topicSubtopics: Record<string, string[]> = {
+  'Ecuaciones lineales': ['Ecuaciones de primer grado', 'Despeje de variables', 'Sistemas de ecuaciones'],
+  'Factorización': ['Factor común', 'Diferencia de cuadrados', 'Trinomio cuadrado perfecto'],
+  'Triángulos': ['Clasificación', 'Propiedades', 'Teorema de Pitágoras'],
+  'Circunferencia': ['Elementos', 'Ángulos inscritos', 'Longitud y área'],
+  'Textos argumentativos': ['Estructura', 'Tesis y argumentos', 'Falacias'],
+  'La célula': ['Organelos', 'Membrana celular', 'Ciclo celular'],
+  'Culturas preincaicas': ['Chavín', 'Paracas', 'Nazca', 'Mochica'],
+  'Present Perfect': ['Afirmativas', 'Negativas', 'Preguntas'],
+  'Regiones naturales': ['Costa', 'Sierra', 'Selva'],
+};
+
 export default function TutorChat({ courseId, courseName, topic, onBack, existingSession }: TutorChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>(existingSession?.messages || []);
   const [input, setInput] = useState('');
@@ -147,7 +163,19 @@ export default function TutorChat({ courseId, courseName, topic, onBack, existin
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Close mode menu on outside click
+  const topicName = topic || 'General';
+  const subtopics = topicSubtopics[topicName] || [];
+  const objective = sessionObjectives[topicName] || `Estudiar y comprender los conceptos fundamentales de ${topicName} en ${courseName}, identificando ideas clave y aplicándolas en ejercicios prácticos.`;
+
+  // Estimate progress based on message count
+  const sessionProgress = useMemo(() => {
+    if (subtopics.length === 0) return { pct: 0, currentIdx: 0 };
+    const msgCount = messages.filter(m => m.role === 'assistant').length;
+    const currentIdx = Math.min(Math.floor(msgCount / 2), subtopics.length - 1);
+    const pct = Math.min(Math.round(((currentIdx + (msgCount > 0 ? 0.5 : 0)) / subtopics.length) * 100), 100);
+    return { pct, currentIdx };
+  }, [messages, subtopics]);
+
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (modeMenuRef.current && !modeMenuRef.current.contains(e.target as Node)) {
@@ -162,19 +190,16 @@ export default function TutorChat({ courseId, courseName, topic, onBack, existin
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Auto-save messages to localStorage
   useEffect(() => {
     if (!sessionId || messages.length === 0 || isTyping) return;
     updateSessionMessages(sessionId, messages, tutorMode);
   }, [messages, isTyping, sessionId, tutorMode]);
 
-  // Auto-start: send empty messages to get initial greeting
   useEffect(() => {
     if (hasStarted) return;
     setHasStarted(true);
     setIsTyping(true);
 
-    // Create a new session
     const newSession = createSession(courseId, courseName, topic || 'General', tutorMode);
     setSessionId(newSession.id);
 
@@ -218,7 +243,6 @@ export default function TutorChat({ courseId, courseName, topic, onBack, existin
     setInput('');
     setIsTyping(true);
 
-    // Build API messages from history
     const apiMessages: ApiMessage[] = [
       ...messages.map(m => ({ role: m.role, content: m.content })),
       { role: 'user' as const, content },
@@ -259,7 +283,6 @@ export default function TutorChat({ courseId, courseName, topic, onBack, existin
 
   const handleSwitchToChat = useCallback(() => {
     setActiveTab('chat');
-    // Track that user went to chat without reading notes if they haven't
     if (!didReadNotesFirst(courseName, topic || 'General')) {
       recordChatWithoutNotes(courseName, topic || 'General');
     }
@@ -268,67 +291,73 @@ export default function TutorChat({ courseId, courseName, topic, onBack, existin
   return (
     <div className="flex h-full">
       <div className="flex-1 flex flex-col min-w-0">
+        {/* ─── Topbar ─── */}
         <div className="border-b border-border bg-card">
-          <div className="flex items-center gap-3 px-4 md:px-6 py-3">
-            <button onClick={onBack} className="p-1.5 hover:bg-muted rounded-lg transition-colors">
+          <div className="flex items-center gap-3 px-4 md:px-6 h-14">
+            <button onClick={onBack} className="p-1.5 hover:bg-muted rounded-lg transition-colors shrink-0">
               <ArrowLeft size={18} />
             </button>
-            <div className="flex-1 min-w-0">
-              <h2 className="font-heading font-semibold text-sm text-foreground">{courseName}</h2>
-              <p className="text-xs text-muted-foreground truncate">{topic || 'Tema general'}</p>
+
+            <div className="flex-1 min-w-0 flex items-center gap-3">
+              <div className="min-w-0">
+                <p className="font-heading font-semibold text-sm text-foreground truncate">{courseName} — {topicName}</p>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              {activeTab === 'chat' && (
-                <div className="relative" ref={modeMenuRef}>
-                  <button
-                    onClick={() => setShowModeMenu(!showModeMenu)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:bg-muted/80 rounded-full text-xs font-medium text-foreground transition-colors"
-                  >
-                    {tutorModes.find(m => m.value === tutorMode)?.icon}
-                    <span className="hidden sm:inline">{tutorMode}</span>
-                    <ChevronDown size={12} className={cn("transition-transform", showModeMenu && "rotate-180")} />
-                  </button>
-                  <AnimatePresence>
-                    {showModeMenu && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -4 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute right-0 top-full mt-1.5 w-56 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden"
-                      >
-                        <div className="p-1.5">
-                          {tutorModes.map((mode) => (
-                            <button
-                              key={mode.value}
-                              onClick={() => { setTutorMode(mode.value); setShowModeMenu(false); }}
-                              className={cn(
-                                "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors",
-                                tutorMode === mode.value ? "bg-primary/10 text-primary" : "hover:bg-muted text-foreground"
-                              )}
-                            >
-                              <span className="shrink-0">{mode.icon}</span>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium">{mode.value}</p>
-                                <p className="text-xs text-muted-foreground">{mode.description}</p>
-                              </div>
-                              {tutorMode === mode.value && <Check size={14} className="shrink-0 text-primary" />}
-                            </button>
-                          ))}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              )}
-              <button
-                onClick={() => setShowPanel(!showPanel)}
-                className="md:hidden p-2 hover:bg-muted rounded-lg transition-colors"
-              >
-                <BookOpen size={18} />
-              </button>
-            </div>
+
+            {/* Mode selector - only in chat tab */}
+            {activeTab === 'chat' && (
+              <div className="relative" ref={modeMenuRef}>
+                <button
+                  onClick={() => setShowModeMenu(!showModeMenu)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:bg-muted/80 rounded-full text-xs font-medium text-foreground transition-colors"
+                >
+                  {tutorModes.find(m => m.value === tutorMode)?.icon}
+                  <span className="hidden sm:inline">{tutorMode}</span>
+                  <ChevronDown size={12} className={cn("transition-transform", showModeMenu && "rotate-180")} />
+                </button>
+                <AnimatePresence>
+                  {showModeMenu && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 top-full mt-1.5 w-56 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden"
+                    >
+                      <div className="p-1.5">
+                        {tutorModes.map((mode) => (
+                          <button
+                            key={mode.value}
+                            onClick={() => { setTutorMode(mode.value); setShowModeMenu(false); }}
+                            className={cn(
+                              "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors",
+                              tutorMode === mode.value ? "bg-primary/10 text-primary" : "hover:bg-muted text-foreground"
+                            )}
+                          >
+                            <span className="shrink-0">{mode.icon}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium">{mode.value}</p>
+                              <p className="text-xs text-muted-foreground">{mode.description}</p>
+                            </div>
+                            {tutorMode === mode.value && <Check size={14} className="shrink-0 text-primary" />}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+
+            <button
+              onClick={() => setShowPanel(!showPanel)}
+              className="md:hidden p-2 hover:bg-muted rounded-lg transition-colors"
+            >
+              <BookOpen size={18} />
+            </button>
           </div>
+
+          {/* Tabs */}
           <div className="flex px-4 md:px-6 gap-1">
             <button
               onClick={() => setActiveTab('notes')}
@@ -361,6 +390,7 @@ export default function TutorChat({ courseId, courseName, topic, onBack, existin
           <TopicNotes courseName={courseName} topic={topic || 'General'} onGoToChat={handleSwitchToChat} />
         ) : (
           <>
+            {/* Messages */}
             <div className="flex-1 overflow-auto px-4 md:px-6 py-4 space-y-4">
               <AnimatePresence>
                 {messages.map((msg) => (
@@ -409,17 +439,9 @@ export default function TutorChat({ courseId, courseName, topic, onBack, existin
               )}
               <div ref={messagesEndRef} />
             </div>
-            <div className="px-4 md:px-6 pb-2">
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
-                {quickActions.map((action) => (
-                  <button key={action.label} onClick={() => handleSend(action.label)} disabled={isTyping} className="chip whitespace-nowrap shrink-0 text-xs disabled:opacity-50">
-                    {action.icon}
-                    {action.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="px-4 md:px-6 pb-4">
+
+            {/* Input */}
+            <div className="px-4 md:px-6 pb-4 pt-2">
               <div className="flex items-end gap-2 bg-card border border-border rounded-2xl p-2 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/40 transition-all">
                 <textarea
                   ref={inputRef}
@@ -439,6 +461,7 @@ export default function TutorChat({ courseId, courseName, topic, onBack, existin
         )}
       </div>
 
+      {/* ─── Study Panel (sidebar) ─── */}
       <div className={cn(
         'border-l border-border bg-card w-72 flex-col',
         showPanel ? 'flex absolute right-0 top-0 bottom-0 z-40 md:relative' : 'hidden md:flex'
@@ -450,41 +473,53 @@ export default function TutorChat({ courseId, courseName, topic, onBack, existin
           </button>
         </div>
         <div className="flex-1 overflow-auto p-4 space-y-5">
+          {/* Tema actual */}
           <div>
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Tema actual</p>
-            <p className="text-sm font-medium text-foreground">{topic || 'Tema general'}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{courseName}</p>
+            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest mb-1.5">Tema actual</p>
+            <p className="text-base font-heading font-semibold text-foreground leading-snug">{courseName} — {topicName}</p>
           </div>
+
+          {/* Objetivo de sesión */}
           <div>
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Acciones rápidas</p>
-            <div className="space-y-1.5">
-              {quickActions.slice(0, 4).map((action) => (
-                <button key={action.label} onClick={() => { setActiveTab('chat'); handleSend(action.label); }} disabled={isTyping} className="w-full flex items-center gap-2 text-left text-xs px-3 py-2 rounded-lg bg-muted/50 hover:bg-muted text-foreground transition-colors disabled:opacity-50">
-                  {action.icon}
-                  {action.label}
-                </button>
-              ))}
-            </div>
+            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest mb-1.5">Objetivo de la sesión</p>
+            <p className="text-xs text-foreground leading-relaxed">{objective}</p>
           </div>
-          <div>
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Sesión</p>
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">Mensajes</span>
-                <span className="font-medium text-foreground">{messages.length}</span>
+
+          {/* Progreso de sesión */}
+          {subtopics.length > 0 && (
+            <div>
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest mb-2">Progreso de la sesión</p>
+              <div className="w-full h-2 bg-muted rounded-full overflow-hidden mb-3">
+                <div
+                  className="h-full rounded-full bg-primary transition-all duration-500"
+                  style={{ width: `${sessionProgress.pct}%` }}
+                />
               </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">Estado</span>
-                <span className="font-medium text-success">Activo</span>
+              <div className="space-y-1">
+                {subtopics.map((sub, i) => {
+                  const isDone = i < sessionProgress.currentIdx;
+                  const isCurrent = i === sessionProgress.currentIdx;
+                  return (
+                    <div key={sub} className={cn(
+                      'flex items-center gap-2 text-xs px-2.5 py-1.5 rounded-lg transition-colors',
+                      isCurrent ? 'bg-primary/10 text-primary font-medium' :
+                      isDone ? 'text-muted-foreground' : 'text-muted-foreground/60'
+                    )}>
+                      <span className={cn(
+                        'w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0',
+                        isDone ? 'bg-mastery-green/20 text-mastery-green' :
+                        isCurrent ? 'bg-primary/20 text-primary ring-2 ring-primary/30' :
+                        'bg-muted text-muted-foreground/50'
+                      )}>
+                        {isDone ? '✓' : i + 1}
+                      </span>
+                      <span className={isDone ? 'line-through' : ''}>{sub}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          </div>
-          <div>
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Objetivo de la sesión</p>
-            <div className="px-3 py-2 rounded-lg bg-primary/5 border border-primary/10">
-              <p className="text-xs text-foreground">Estudiar y practicar con el Tutor AI sobre {topic || courseName}</p>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

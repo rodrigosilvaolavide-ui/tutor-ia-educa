@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Brain, Layers, Target, ArrowRight, Clock, ChevronRight, ChevronDown, BookOpen, TrendingUp, AlertCircle, Zap, BarChart3, X } from 'lucide-react';
+import { Brain, Layers, Target, ArrowRight, Clock, ChevronDown, BarChart3, AlertTriangle, CheckCircle2, Zap } from 'lucide-react';
 import { courses, recentSessions } from '@/lib/mock-data';
-import { currentStudentStats, courseProgress, topicMastery, getMasteryLevel, masteryLabels } from '@/lib/gamification';
+import { courseProgress } from '@/lib/gamification';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -10,106 +10,64 @@ interface StudentHomeProps {
   onNavigate: (view: string) => void;
 }
 
-/* ─── Study recommendations (mock) ─── */
+/* ─── Rich study recommendations ─── */
 const studyRecommendations = [
   {
-    course: 'Matemática', coursIcon: '📐', courseId: 'math',
-    topic: 'Factorización', reason: 'Te está costando este tema',
-    action: 'tutor' as const, actionLabel: 'Estudiar con Tutor AI',
+    courseIcon: '📐', courseId: 'math',
+    alert: 'Tienes evaluación de Matemática sobre triángulos notables en 3 días.',
+    action: 'Completa un simulacro corto de triángulos notables y revisa los ejercicios que falles.',
+    time: '25 min',
+    cta: 'Iniciar Simulacro',
+    target: 'simulacros' as const,
   },
   {
-    course: 'Ciencia y Tecnología', coursIcon: '🔬', courseId: 'science',
-    topic: 'La célula', reason: 'Lo dejaste a medias la última vez',
-    action: 'tutor' as const, actionLabel: 'Continuar con Tutor AI',
+    courseIcon: '📐', courseId: 'math',
+    alert: 'Aún no dominas Factorización y es base para los siguientes temas de Álgebra.',
+    action: 'Repasa con el Tutor AI los tipos de factorización: factor común, diferencia de cuadrados y trinomios.',
+    time: '30 min',
+    cta: 'Estudiar con Tutor AI',
+    target: 'tutor' as const,
   },
   {
-    course: 'Inglés', coursIcon: '🌎', courseId: 'english',
-    topic: 'Present Perfect', reason: 'Conviene reforzar antes del simulacro',
-    action: 'flashcards' as const, actionLabel: 'Practicar Flash Cards',
+    courseIcon: '🔬', courseId: 'science',
+    alert: 'Estás en 72% de preparación en La célula y te faltan organelos y ciclo celular.',
+    action: 'Haz Flash Cards de 15 preguntas sobre organelos celulares hasta obtener 100% de respuestas correctas.',
+    time: '20 min',
+    cta: 'Repasar Flash Cards',
+    target: 'flashcards' as const,
   },
   {
-    course: 'Ciencias Sociales', coursIcon: '🌍', courseId: 'social',
-    topic: 'Regiones naturales', reason: 'Es tu siguiente paso recomendado',
-    action: 'tutor' as const, actionLabel: 'Estudiar con Tutor AI',
+    courseIcon: '🌎', courseId: 'english',
+    alert: 'Errores frecuentes en formas negativas del Present Perfect en tu última práctica.',
+    action: 'Estudia con el Tutor AI la estructura de oraciones negativas e interrogativas en Present Perfect.',
+    time: '20 min',
+    cta: 'Estudiar con Tutor AI',
+    target: 'tutor' as const,
   },
-];
-
-/* ─── Recommended plan ─── */
-const recommendedPlan = [
-  { text: 'Reforzar Factorización en Matemática', action: 'tutor', courseId: 'math', topic: 'Factorización', icon: Brain },
-  { text: 'Completar simulacro de Ciencia y Tecnología', action: 'simulacros', courseId: 'science', topic: '', icon: Target },
-  { text: 'Terminar La célula en Ciencia', action: 'tutor', courseId: 'science', topic: 'La célula', icon: BookOpen },
-  { text: 'Repasar Present Perfect con Flash Cards', action: 'flashcards', courseId: 'english', topic: 'Present Perfect', icon: Layers },
 ];
 
 export default function StudentHome({ onStartStudy, onNavigate }: StudentHomeProps) {
-  const weakTopics = Object.entries(topicMastery)
-    .filter(([, v]) => v < 50)
-    .sort((a, b) => a[1] - b[1]);
-
   const [expandedCourse, setExpandedCourse] = useState<string | null>(null);
-  const [reinforceDetail, setReinforceDetail] = useState<string | null>(null);
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-fade-in pb-12">
       {/* Header */}
-      <HeaderSection name={currentStudentStats.name} />
+      <div className="px-1">
+        <h1 className="heading-1 text-foreground">¡Hola, Carlos! 👋</h1>
+        <p className="text-muted-foreground mt-1">¿Qué vamos a estudiar hoy?</p>
+      </div>
 
-      {/* Main CTAs */}
+      {/* 3 Main CTAs */}
       <ActionCards onNavigate={onNavigate} onStartStudy={onStartStudy} />
 
       {/* Qué estudiar ahora */}
-      <StudyNowSection recommendations={studyRecommendations} onStartStudy={onStartStudy} onNavigate={onNavigate} />
+      <StudyNowSection onStartStudy={onStartStudy} onNavigate={onNavigate} />
 
       {/* Continuar estudiando */}
       <ContinueStudying onStartStudy={onStartStudy} />
 
       {/* Progreso por curso */}
       <CourseProgressSection expandedCourse={expandedCourse} setExpandedCourse={setExpandedCourse} onStartStudy={onStartStudy} onNavigate={onNavigate} />
-
-      {/* Temas por reforzar */}
-      {weakTopics.length > 0 && (
-        <ReinforceSection topics={weakTopics} onStartStudy={onStartStudy} reinforceDetail={reinforceDetail} setReinforceDetail={setReinforceDetail} />
-      )}
-
-      {/* Plan recomendado */}
-      <RecommendedPlan onStartStudy={onStartStudy} onNavigate={onNavigate} />
-
-      {/* Sesiones recientes */}
-      <RecentActivity />
-    </div>
-  );
-}
-
-/* ─── Header ─── */
-function HeaderSection({ name }: { name: string }) {
-  const daysStudied = 4;
-  const sessionsThisWeek = 6;
-  const weakCount = Object.values(topicMastery).filter(v => v < 50).length;
-
-  return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent px-6 py-8 md:px-10 md:py-10">
-      <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-primary/5 blur-3xl" />
-      <div className="relative z-10 space-y-4">
-        <h1 className="heading-1 text-foreground">
-          ¡Hola, {name}! 👋
-        </h1>
-        <p className="text-muted-foreground text-lg">¿Qué vamos a estudiar hoy?</p>
-
-        <div className="flex flex-wrap items-center gap-3 pt-1">
-          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-primary/10 text-sm font-medium text-foreground">
-            📅 {daysStudied} días estudiados esta semana
-          </span>
-          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-mastery-blue/10 text-sm font-medium text-foreground">
-            📖 {sessionsThisWeek} sesiones completadas
-          </span>
-          {weakCount > 0 && (
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-mastery-orange/10 text-sm font-medium text-foreground">
-              ⚠️ {weakCount} temas por reforzar
-            </span>
-          )}
-        </div>
-      </div>
     </div>
   );
 }
@@ -154,38 +112,42 @@ function ActionCards({ onNavigate, onStartStudy }: { onNavigate: (v: string) => 
 }
 
 /* ─── Qué estudiar ahora ─── */
-function StudyNowSection({ recommendations, onStartStudy, onNavigate }: {
-  recommendations: typeof studyRecommendations;
-  onStartStudy: (id?: string) => void;
-  onNavigate: (v: string) => void;
-}) {
+function StudyNowSection({ onStartStudy, onNavigate }: { onStartStudy: (id?: string) => void; onNavigate: (v: string) => void }) {
   return (
     <section className="px-1 space-y-3">
       <div className="flex items-center gap-2">
         <Zap size={18} className="text-primary" />
         <h2 className="heading-3 text-foreground">Qué estudiar ahora</h2>
       </div>
-      <div className="space-y-2.5">
-        {recommendations.map((rec) => (
-          <motion.button
-            key={`${rec.courseId}-${rec.topic}`}
-            whileHover={{ x: 2 }}
-            onClick={() => {
-              if (rec.action === 'tutor') onStartStudy(rec.courseId);
-              else onNavigate(rec.action);
-            }}
-            className="stat-card flex items-center gap-4 w-full text-left group"
-          >
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-xl shrink-0">
-              {rec.coursIcon}
+      <div className="space-y-3">
+        {studyRecommendations.map((rec, i) => (
+          <div key={i} className="stat-card space-y-3">
+            {/* Alert */}
+            <div className="flex items-start gap-3">
+              <span className="text-xl shrink-0 mt-0.5">{rec.courseIcon}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground leading-snug">{rec.alert}</p>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">{rec.course}: {rec.topic}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{rec.reason}</p>
+            {/* Action + Time */}
+            <div className="pl-[2.25rem] space-y-2.5">
+              <p className="text-xs text-muted-foreground leading-relaxed">{rec.action}</p>
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                  <Clock size={12} /> {rec.time}
+                </span>
+                <button
+                  onClick={() => {
+                    if (rec.target === 'tutor') onStartStudy(rec.courseId);
+                    else onNavigate(rec.target);
+                  }}
+                  className="text-xs font-medium px-3.5 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
+                  {rec.cta} →
+                </button>
+              </div>
             </div>
-            <span className="text-xs text-primary font-medium shrink-0 hidden sm:block">{rec.actionLabel}</span>
-            <ArrowRight size={16} className="text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
-          </motion.button>
+          </div>
         ))}
       </div>
     </section>
@@ -196,12 +158,6 @@ function StudyNowSection({ recommendations, onStartStudy, onNavigate }: {
 function ContinueStudying({ onStartStudy }: { onStartStudy: (id?: string) => void }) {
   const recent = recentSessions.slice(0, 3);
   if (recent.length === 0) return null;
-
-  const insights: Record<string, string> = {
-    's1': 'Buen avance, te falta practicar más',
-    's2': 'Te falta reforzar conceptos base',
-    's3': 'Conviene cerrar este tema antes de seguir',
-  };
 
   return (
     <section className="px-1 space-y-3">
@@ -221,22 +177,8 @@ function ContinueStudying({ onStartStudy }: { onStartStudy: (id?: string) => voi
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{session.topic}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {insights[session.id] || `Última sesión: ${session.courseName}`}
-                </p>
-                <div className="flex items-center gap-2 mt-1.5">
-                  <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden max-w-[140px]">
-                    <div
-                      className={cn('h-full rounded-full', getMasteryBarColor(session.score))}
-                      style={{ width: `${session.score}%` }}
-                    />
-                  </div>
-                  <span className="text-xs text-muted-foreground">{session.score}%</span>
-                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">{session.courseName} · {session.duration} min</p>
               </div>
-              <span className="text-xs text-muted-foreground shrink-0 flex items-center gap-1">
-                <Clock size={12} /> {session.duration} min
-              </span>
               <ArrowRight size={16} className="text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
             </motion.button>
           );
@@ -253,43 +195,55 @@ function CourseProgressSection({ expandedCourse, setExpandedCourse, onStartStudy
   onStartStudy: (id?: string) => void;
   onNavigate: (v: string) => void;
 }) {
-  // Mock detail data per course
-  const courseDetails: Record<string, { mastered: string[]; pending: string[]; weaknesses: string[]; recommendation: string }> = {
+  const courseDetails: Record<string, {
+    mastered: string[];
+    pending: { topic: string; pct: number; why: string }[];
+    weaknesses: { topic: string; detail: string; severity: 'high' | 'medium' }[];
+  }> = {
     math: {
       mastered: ['Ecuaciones lineales'],
-      pending: ['Circunferencia'],
-      weaknesses: ['Factorización: Dificultad con trinomios', 'Circunferencia: No se ha iniciado'],
-      recommendation: 'Refuerza Factorización con el Tutor AI antes de avanzar a Circunferencia.',
+      pending: [
+        { topic: 'Circunferencia', pct: 0, why: 'No se ha iniciado este tema' },
+      ],
+      weaknesses: [
+        { topic: 'Factorización', detail: 'Dificultad con trinomios cuadrados perfectos y diferencia de cuadrados', severity: 'high' },
+        { topic: 'Triángulos', detail: 'Falta practicar el Teorema de Pitágoras en problemas aplicados', severity: 'medium' },
+      ],
     },
     comm: {
       mastered: ['Textos argumentativos'],
       pending: [],
       weaknesses: [],
-      recommendation: 'Excelente avance. Practica con un simulacro para consolidar.',
     },
     science: {
       mastered: [],
-      pending: ['La célula'],
-      weaknesses: ['La célula: Falta reforzar organelos y ciclo celular'],
-      recommendation: 'Continúa estudiando La célula con el Tutor AI.',
+      pending: [
+        { topic: 'La célula', pct: 72, why: 'Faltan organelos y ciclo celular' },
+      ],
+      weaknesses: [
+        { topic: 'La célula', detail: 'Confusión entre mitosis y meiosis, funciones de organelos', severity: 'high' },
+      ],
     },
     history: {
       mastered: ['Culturas preincaicas'],
       pending: [],
       weaknesses: [],
-      recommendation: 'Buen dominio. Puedes practicar con Flash Cards.',
     },
     english: {
       mastered: [],
-      pending: ['Present Perfect'],
-      weaknesses: ['Present Perfect: Confusión con formas negativas y preguntas'],
-      recommendation: 'Estudia Present Perfect con el Tutor AI para aclarar dudas.',
+      pending: [
+        { topic: 'Present Perfect', pct: 45, why: 'Errores en formas negativas e interrogativas' },
+      ],
+      weaknesses: [
+        { topic: 'Present Perfect', detail: 'Confusión entre "have" y "has", estructura de preguntas', severity: 'high' },
+      ],
     },
     social: {
       mastered: [],
-      pending: ['Regiones naturales'],
-      weaknesses: ['Regiones naturales: Recién empezando'],
-      recommendation: 'Inicia el tema con el Tutor AI.',
+      pending: [
+        { topic: 'Regiones naturales', pct: 15, why: 'Tema recién iniciado' },
+      ],
+      weaknesses: [],
     },
   };
 
@@ -304,8 +258,6 @@ function CourseProgressSection({ expandedCourse, setExpandedCourse, onStartStudy
           const course = courses.find(c => c.id === cp.courseId);
           const isExpanded = expandedCourse === cp.courseId;
           const detail = courseDetails[cp.courseId];
-          const statusLabel = cp.mastery >= 80 ? 'Buen dominio' : cp.mastery >= 50 ? 'En progreso' : 'Por reforzar';
-          const statusColor = cp.mastery >= 80 ? 'text-mastery-green' : cp.mastery >= 50 ? 'text-mastery-blue' : 'text-mastery-orange';
 
           return (
             <div key={cp.courseId} className="stat-card overflow-hidden">
@@ -317,10 +269,7 @@ function CourseProgressSection({ expandedCourse, setExpandedCourse, onStartStudy
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-center mb-1">
                     <p className="text-sm font-medium text-foreground">{cp.name}</p>
-                    <div className="flex items-center gap-2">
-                      <span className={cn('text-xs font-medium', statusColor)}>{statusLabel}</span>
-                      <span className="text-sm font-semibold text-foreground">{cp.mastery}%</span>
-                    </div>
+                    <span className="text-sm font-semibold text-foreground">{cp.mastery}%</span>
                   </div>
                   <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
                     <div className={cn('h-full rounded-full', getMasteryBarColor(cp.mastery))} style={{ width: `${cp.mastery}%` }} />
@@ -338,45 +287,76 @@ function CourseProgressSection({ expandedCourse, setExpandedCourse, onStartStudy
                     transition={{ duration: 0.2 }}
                     className="overflow-hidden"
                   >
-                    <div className="pt-4 mt-4 border-t border-border space-y-3">
+                    <div className="pt-4 mt-4 border-t border-border space-y-4">
+                      {/* Weaknesses - top priority */}
+                      {detail.weaknesses.length > 0 && (
+                        <div className="space-y-2">
+                          <p className="text-xs font-semibold text-mastery-red flex items-center gap-1.5">
+                            <AlertTriangle size={13} /> Puntos débiles detectados
+                          </p>
+                          {detail.weaknesses.map(w => (
+                            <div key={w.topic} className="bg-mastery-red/5 border border-mastery-red/10 rounded-xl p-3 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <p className="text-sm font-medium text-foreground">{w.topic}</p>
+                                <span className={cn(
+                                  'text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full',
+                                  w.severity === 'high' ? 'bg-mastery-red/10 text-mastery-red' : 'bg-mastery-orange/10 text-mastery-orange'
+                                )}>
+                                  {w.severity === 'high' ? 'Prioridad alta' : 'Por mejorar'}
+                                </span>
+                              </div>
+                              <p className="text-xs text-muted-foreground">{w.detail}</p>
+                              <div className="flex gap-2">
+                                <button onClick={() => onStartStudy(cp.courseId)}
+                                  className="text-xs px-3 py-1.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors">
+                                  Estudiar con Tutor AI
+                                </button>
+                                <button onClick={() => onNavigate('flashcards')}
+                                  className="text-xs px-3 py-1.5 rounded-lg border border-border text-foreground font-medium hover:bg-muted transition-colors">
+                                  Flash Cards
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Pending topics */}
+                      {detail.pending.length > 0 && (
+                        <div className="space-y-2">
+                          <p className="text-xs font-semibold text-mastery-orange flex items-center gap-1.5">
+                            <Clock size={13} /> Temas pendientes
+                          </p>
+                          {detail.pending.map(p => (
+                            <div key={p.topic} className="bg-mastery-orange/5 border border-mastery-orange/10 rounded-xl p-3 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <p className="text-sm font-medium text-foreground">{p.topic}</p>
+                                <span className="text-xs text-muted-foreground">{p.pct}%</span>
+                              </div>
+                              <p className="text-xs text-muted-foreground">{p.why}</p>
+                              <div className="flex gap-2">
+                                <button onClick={() => onStartStudy(cp.courseId)}
+                                  className="text-xs px-3 py-1.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors">
+                                  Estudiar con Tutor AI
+                                </button>
+                                <button onClick={() => onNavigate('simulacros')}
+                                  className="text-xs px-3 py-1.5 rounded-lg border border-border text-foreground font-medium hover:bg-muted transition-colors">
+                                  Simulacro
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Mastered - compact */}
                       {detail.mastered.length > 0 && (
                         <div>
-                          <p className="text-xs font-medium text-mastery-green mb-1">✅ Temas dominados</p>
-                          <p className="text-xs text-muted-foreground">{detail.mastered.join(', ')}</p>
+                          <p className="text-xs text-muted-foreground flex items-center gap-1.5 mb-1.5">
+                            <CheckCircle2 size={12} className="text-mastery-green" /> Dominados: {detail.mastered.join(', ')}
+                          </p>
                         </div>
                       )}
-                      {detail.pending.length > 0 && (
-                        <div>
-                          <p className="text-xs font-medium text-mastery-orange mb-1">📋 Temas pendientes</p>
-                          <p className="text-xs text-muted-foreground">{detail.pending.join(', ')}</p>
-                        </div>
-                      )}
-                      {detail.weaknesses.length > 0 && (
-                        <div>
-                          <p className="text-xs font-medium text-mastery-red mb-1">⚠️ Puntos débiles detectados</p>
-                          <ul className="text-xs text-muted-foreground space-y-0.5">
-                            {detail.weaknesses.map(w => <li key={w}>• {w}</li>)}
-                          </ul>
-                        </div>
-                      )}
-                      <div className="bg-primary/5 rounded-lg p-3">
-                        <p className="text-xs font-medium text-primary mb-1">💡 Recomendación</p>
-                        <p className="text-xs text-foreground">{detail.recommendation}</p>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <button onClick={() => onStartStudy(cp.courseId)}
-                          className="text-xs px-3 py-1.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors">
-                          Estudiar con Tutor AI
-                        </button>
-                        <button onClick={() => onNavigate('flashcards')}
-                          className="text-xs px-3 py-1.5 rounded-lg border border-border text-foreground font-medium hover:bg-muted transition-colors">
-                          Flash Cards
-                        </button>
-                        <button onClick={() => onNavigate('simulacros')}
-                          className="text-xs px-3 py-1.5 rounded-lg border border-border text-foreground font-medium hover:bg-muted transition-colors">
-                          Simulacro
-                        </button>
-                      </div>
                     </div>
                   </motion.div>
                 )}
@@ -384,145 +364,6 @@ function CourseProgressSection({ expandedCourse, setExpandedCourse, onStartStudy
             </div>
           );
         })}
-      </div>
-    </section>
-  );
-}
-
-/* ─── Temas por reforzar ─── */
-function ReinforceSection({ topics, onStartStudy, reinforceDetail, setReinforceDetail }: {
-  topics: [string, number][];
-  onStartStudy: (id?: string) => void;
-  reinforceDetail: string | null;
-  setReinforceDetail: (t: string | null) => void;
-}) {
-  const topicReasons: Record<string, { why: string; what: string; courseId: string }> = {
-    'Factorización': { why: 'Bajo rendimiento en las últimas sesiones de práctica', what: 'Trinomios y diferencia de cuadrados', courseId: 'math' },
-    'Circunferencia': { why: 'No se ha estudiado este tema aún', what: 'Elementos y ángulos inscritos', courseId: 'math' },
-    'Present Perfect': { why: 'Errores frecuentes en formas negativas', what: 'Estructura de oraciones negativas y preguntas', courseId: 'english' },
-    'Regiones naturales': { why: 'Tema recién iniciado, falta profundizar', what: 'Características de Costa, Sierra y Selva', courseId: 'social' },
-  };
-
-  return (
-    <section className="px-1 space-y-3">
-      <div className="flex items-center gap-2">
-        <AlertCircle size={18} className="text-mastery-orange" />
-        <h2 className="heading-3 text-foreground">Temas por reforzar</h2>
-      </div>
-      <div className="space-y-2">
-        {topics.map(([topic, pct]) => {
-          const detail = topicReasons[topic];
-          const isOpen = reinforceDetail === topic;
-
-          return (
-            <div key={topic} className="stat-card overflow-hidden">
-              <button
-                onClick={() => setReinforceDetail(isOpen ? null : topic)}
-                className="w-full flex items-center gap-3 text-left"
-              >
-                <div className={cn(
-                  'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
-                  pct < 25 ? 'bg-mastery-red/10' : 'bg-mastery-orange/10'
-                )}>
-                  <AlertCircle size={14} className={pct < 25 ? 'text-mastery-red' : 'text-mastery-orange'} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground">{topic}</p>
-                  <p className="text-xs text-muted-foreground">{pct}% de dominio</p>
-                </div>
-                <ChevronDown size={14} className={cn('text-muted-foreground transition-transform', isOpen && 'rotate-180')} />
-              </button>
-
-              <AnimatePresence>
-                {isOpen && detail && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <div className="pt-3 mt-3 border-t border-border space-y-2">
-                      <p className="text-xs text-muted-foreground"><strong className="text-foreground">¿Por qué?</strong> {detail.why}</p>
-                      <p className="text-xs text-muted-foreground"><strong className="text-foreground">¿Qué reforzar?</strong> {detail.what}</p>
-                      <div className="flex gap-2 pt-1">
-                        <button onClick={() => onStartStudy(detail.courseId)}
-                          className="text-xs px-3 py-1.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90">
-                          Estudiar con Tutor AI
-                        </button>
-                        <button onClick={() => onStartStudy(detail.courseId)}
-                          className="text-xs px-3 py-1.5 rounded-lg border border-border text-foreground font-medium hover:bg-muted">
-                          Flash Cards
-                        </button>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
-/* ─── Plan recomendado ─── */
-function RecommendedPlan({ onStartStudy, onNavigate }: { onStartStudy: (id?: string) => void; onNavigate: (v: string) => void }) {
-  return (
-    <section className="px-1 space-y-3">
-      <div className="flex items-center gap-2">
-        <TrendingUp size={18} className="text-primary" />
-        <h2 className="heading-3 text-foreground">Plan recomendado</h2>
-      </div>
-      <div className="space-y-2">
-        {recommendedPlan.map((item, i) => (
-          <motion.button
-            key={i}
-            whileHover={{ x: 2 }}
-            onClick={() => {
-              if (item.action === 'tutor') onStartStudy(item.courseId);
-              else onNavigate(item.action);
-            }}
-            className="stat-card flex items-center gap-3 w-full text-left group"
-          >
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              <item.icon size={16} className="text-primary" />
-            </div>
-            <p className="text-sm text-foreground flex-1">{item.text}</p>
-            <ChevronRight size={14} className="text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
-          </motion.button>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-/* ─── Sesiones recientes ─── */
-function RecentActivity() {
-  const recent = recentSessions.slice(0, 3);
-  if (recent.length === 0) return null;
-
-  return (
-    <section className="px-1 space-y-3">
-      <h2 className="heading-3 text-foreground">Actividad reciente</h2>
-      <div className="stat-card">
-        <div className="space-y-2">
-          {recent.map(session => (
-            <div key={session.id} className="flex items-center gap-3 py-1.5">
-              <div className="text-lg">{courses.find(c => c.id === session.courseId)?.icon}</div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{session.topic}</p>
-                <p className="text-xs text-muted-foreground">
-                  {session.courseName} · {session.date.toLocaleDateString('es-PE', { day: 'numeric', month: 'short' })}
-                </p>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="text-sm font-semibold text-foreground">{session.score}%</p>
-                <p className="text-xs text-muted-foreground">{session.duration} min</p>
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
     </section>
   );
