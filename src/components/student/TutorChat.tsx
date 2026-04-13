@@ -296,9 +296,16 @@ export default function TutorChat({ courseId, courseName, topic, onBack, existin
       {/* ─── Unified Topbar spanning full width ─── */}
       <div className="border-b border-border bg-card">
         <div className="flex items-center gap-3 px-4 md:px-6 h-14">
-          <button onClick={onBack} className="p-1.5 hover:bg-muted rounded-lg transition-colors shrink-0">
-            <ArrowLeft size={18} />
-          </button>
+          {immersiveMode && onToggleSidebar && (
+            <button onClick={onToggleSidebar} className="hidden md:flex p-1.5 hover:bg-muted rounded-lg transition-colors shrink-0 text-muted-foreground hover:text-foreground">
+              {sidebarCollapsed ? <ChevronRight size={18} /> : <ArrowLeft size={18} />}
+            </button>
+          )}
+          {!immersiveMode && (
+            <button onClick={onBack} className="p-1.5 hover:bg-muted rounded-lg transition-colors shrink-0">
+              <ArrowLeft size={18} />
+            </button>
+          )}
 
           <div className="flex-1 min-w-0 flex items-center gap-3">
             <div className="min-w-0">
