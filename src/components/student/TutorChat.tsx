@@ -153,7 +153,7 @@ export default function TutorChat({ courseId, courseName, topic, onBack, existin
   const [messages, setMessages] = useState<ChatMessage[]>(existingSession?.messages || []);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [showPanel, setShowPanel] = useState(false);
+  const [showPanel, setShowPanel] = useState(true);
   const [hasStarted, setHasStarted] = useState(!!existingSession);
   const [tutorMode, setTutorMode] = useState<TutorMode>((existingSession?.mode as TutorMode) || 'Teoría');
   const [showModeMenu, setShowModeMenu] = useState(false);
