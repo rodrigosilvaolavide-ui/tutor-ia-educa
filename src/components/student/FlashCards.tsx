@@ -153,7 +153,7 @@ export default function FlashCards() {
     }
   };
 
-  const handleMultipleChoice = (option: string) => {
+  const handleMultipleChoice = async (option: string) => {
     if (selectedOption || evaluating) return;
     const card = cards[currentIndex];
     const isCorrect = option === card.answer;
@@ -167,12 +167,29 @@ export default function FlashCards() {
     setMastery(updated.mastery);
     setCardMasteryMap(updated.cardMap);
     setShowFeedback(true);
+
+    // If incorrect, fetch a brief AI explanation
+    if (!isCorrect) {
+      setExplaining(true);
+      setExplanation(null);
+      try {
+        const courseName = courses.find(c => c.id === selectedCourse)?.name || '';
+        const exp = await explainAnswer(card.question, card.answer, option, card.topic || selectedTopic || 'General', courseName);
+        setExplanation(exp);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setExplaining(false);
+      }
+    }
   };
 
   const nextCard = () => {
     setFlipped(false);
     setShowFeedback(false);
     setSelectedOption(null);
+    setExplanation(null);
+    setExplaining(false);
     if (currentIndex + 1 >= cards.length) {
       setPhase('results');
     } else {
