@@ -57,12 +57,14 @@ export default function FlashCards() {
   const [selectedCourse, setSelectedCourse] = useState('');
   const [selectedTopic, setSelectedTopic] = useState('');
   const [mode, setMode] = useState<FlashCardMode>('review');
+  const [style, setStyle] = useState<FlashCardStyle>('fill');
   const [sessionSize, setSessionSize] = useState<SessionSize>(10);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [reviewResults, setReviewResults] = useState<ReviewResult[]>([]);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [testAnswer, setTestAnswer] = useState('');
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [cards, setCards] = useState<FlashCard[]>([]);
   const [evaluating, setEvaluating] = useState(false);
