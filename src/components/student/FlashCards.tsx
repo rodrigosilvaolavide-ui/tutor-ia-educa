@@ -134,9 +134,26 @@ export default function FlashCards() {
     }
   };
 
+  const handleMultipleChoice = (option: string) => {
+    if (selectedOption || evaluating) return;
+    const card = cards[currentIndex];
+    const isCorrect = option === card.answer;
+    setSelectedOption(option);
+    const rating: 'correct' | 'incorrect' = isCorrect ? 'correct' : 'incorrect';
+    const feedback = isCorrect
+      ? '¡Correcto! Excelente elección.'
+      : 'Incorrecto. Revisa la respuesta correcta.';
+    setTestResults(prev => [...prev, { card, answer: option, rating, feedback }]);
+    const updated = updateCardMastery(card.id, rating as any, cardMasteryMap, mastery);
+    setMastery(updated.mastery);
+    setCardMasteryMap(updated.cardMap);
+    setShowFeedback(true);
+  };
+
   const nextCard = () => {
     setFlipped(false);
     setShowFeedback(false);
+    setSelectedOption(null);
     if (currentIndex + 1 >= cards.length) {
       setPhase('results');
     } else {
