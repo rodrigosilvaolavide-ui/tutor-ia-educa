@@ -463,6 +463,26 @@ export default function FlashCards() {
                           <p className="text-xs text-muted-foreground mb-1">Respuesta correcta</p>
                           <p className="text-sm text-foreground">{card.answer}</p>
                         </div>
+                        {result.rating === 'incorrect' && (explaining || explanation) && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="p-4 rounded-xl border border-primary/20 bg-primary/5"
+                          >
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <Lightbulb size={14} className="text-primary" />
+                              <p className="text-xs font-medium text-primary">Por qué es la correcta</p>
+                            </div>
+                            {explaining ? (
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Loader2 size={14} className="animate-spin" />
+                                Generando explicación...
+                              </div>
+                            ) : (
+                              <p className="text-sm text-foreground leading-relaxed">{explanation}</p>
+                            )}
+                          </motion.div>
+                        )}
                         <button onClick={nextCard}
                           className="w-full py-3 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 flex items-center justify-center gap-2">
                           {currentIndex + 1 >= cards.length ? 'Ver resultados' : 'Siguiente'} <ChevronRight size={16} />
