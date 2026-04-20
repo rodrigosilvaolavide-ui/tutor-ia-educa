@@ -77,7 +77,7 @@ export default function FlashCards() {
 
     setPhase('loading');
     try {
-      const generated = await generateFlashCards(course.name, selectedTopic, sessionSize);
+      const generated = await generateFlashCards(course.name, selectedTopic, sessionSize, style);
       if (generated.length === 0) throw new Error('No se generaron tarjetas');
       setCards(generated);
       setCurrentIndex(0);
