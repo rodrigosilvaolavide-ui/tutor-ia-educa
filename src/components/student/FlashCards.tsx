@@ -52,6 +52,23 @@ async function evaluateAnswer(question: string, expectedAnswer: string, studentA
   return resp.json();
 }
 
+async function explainAnswer(question: string, correctAnswer: string, studentAnswer: string, topic: string, courseName: string): Promise<string> {
+  const resp = await fetch(`${SUPABASE_URL}/functions/v1/explain-flashcard`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+    },
+    body: JSON.stringify({ question, correctAnswer, studentAnswer, topic, courseName }),
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({ error: 'Error de red' }));
+    throw new Error(err.error || 'Error generando explicación');
+  }
+  const data = await resp.json();
+  return data.explanation as string;
+}
+
 export default function FlashCards() {
   const [phase, setPhase] = useState<Phase>('setup');
   const [selectedCourse, setSelectedCourse] = useState('');
