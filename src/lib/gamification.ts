@@ -119,6 +119,8 @@ export interface FlashCard {
   answer: string;
   topic: string;
   difficulty: 'easy' | 'medium' | 'hard';
+  style?: 'fill' | 'multiple_choice';
+  options?: string[];
 }
 
 export const mockFlashCards: FlashCard[] = [

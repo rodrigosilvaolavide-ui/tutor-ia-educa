@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { RotateCcw, CheckCircle, XCircle, MinusCircle, ChevronRight, Zap, Send, Loader2 } from 'lucide-react';
+import { RotateCcw, CheckCircle, XCircle, MinusCircle, ChevronRight, Zap, Send, Loader2, PenLine, ListChecks } from 'lucide-react';
 import { courses } from '@/lib/mock-data';
 import { FlashCard } from '@/lib/gamification';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,20 +12,21 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 type FlashCardMode = 'review' | 'test';
+type FlashCardStyle = 'fill' | 'multiple_choice';
 type SessionSize = 5 | 10 | 15;
 type Phase = 'setup' | 'loading' | 'session' | 'results';
 
 interface ReviewResult { card: FlashCard; rating: 'knew' | 'partial' | 'didnt_know' }
 interface TestResult { card: FlashCard; answer: string; rating: 'correct' | 'partial' | 'incorrect'; feedback: string }
 
-async function generateFlashCards(courseName: string, topic: string, count: number): Promise<FlashCard[]> {
+async function generateFlashCards(courseName: string, topic: string, count: number, style: FlashCardStyle): Promise<FlashCard[]> {
   const resp = await fetch(`${SUPABASE_URL}/functions/v1/generate-flashcards`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${SUPABASE_KEY}`,
     },
-    body: JSON.stringify({ courseName, topic, count }),
+    body: JSON.stringify({ courseName, topic, count, style }),
   });
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({ error: 'Error de red' }));
@@ -56,12 +57,14 @@ export default function FlashCards() {
   const [selectedCourse, setSelectedCourse] = useState('');
   const [selectedTopic, setSelectedTopic] = useState('');
   const [mode, setMode] = useState<FlashCardMode>('review');
+  const [style, setStyle] = useState<FlashCardStyle>('fill');
   const [sessionSize, setSessionSize] = useState<SessionSize>(10);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [reviewResults, setReviewResults] = useState<ReviewResult[]>([]);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [testAnswer, setTestAnswer] = useState('');
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [cards, setCards] = useState<FlashCard[]>([]);
   const [evaluating, setEvaluating] = useState(false);
@@ -74,7 +77,7 @@ export default function FlashCards() {
 
     setPhase('loading');
     try {
-      const generated = await generateFlashCards(course.name, selectedTopic, sessionSize);
+      const generated = await generateFlashCards(course.name, selectedTopic, sessionSize, style);
       if (generated.length === 0) throw new Error('No se generaron tarjetas');
       setCards(generated);
       setCurrentIndex(0);
@@ -131,9 +134,26 @@ export default function FlashCards() {
     }
   };
 
+  const handleMultipleChoice = (option: string) => {
+    if (selectedOption || evaluating) return;
+    const card = cards[currentIndex];
+    const isCorrect = option === card.answer;
+    setSelectedOption(option);
+    const rating: 'correct' | 'incorrect' = isCorrect ? 'correct' : 'incorrect';
+    const feedback = isCorrect
+      ? '¡Correcto! Excelente elección.'
+      : 'Incorrecto. Revisa la respuesta correcta.';
+    setTestResults(prev => [...prev, { card, answer: option, rating, feedback }]);
+    const updated = updateCardMastery(card.id, rating as any, cardMasteryMap, mastery);
+    setMastery(updated.mastery);
+    setCardMasteryMap(updated.cardMap);
+    setShowFeedback(true);
+  };
+
   const nextCard = () => {
     setFlipped(false);
     setShowFeedback(false);
+    setSelectedOption(null);
     if (currentIndex + 1 >= cards.length) {
       setPhase('results');
     } else {
@@ -232,7 +252,25 @@ export default function FlashCards() {
             </div>
           </div>
 
-          {/* Session size */}
+          {/* Style */}
+          <div>
+            <label className="text-sm font-medium text-foreground mb-3 block">Elige el estilo</label>
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={() => setStyle('fill')}
+                className={cn('stat-card text-left transition-all', style === 'fill' ? 'border-primary ring-2 ring-primary/20' : 'hover:border-primary/30')}>
+                <PenLine size={20} className="text-primary mb-2" />
+                <p className="font-medium text-foreground text-sm">Rellenar texto</p>
+                <p className="text-xs text-muted-foreground mt-1">Escribes tu propia respuesta a cada pregunta</p>
+              </button>
+              <button onClick={() => setStyle('multiple_choice')}
+                className={cn('stat-card text-left transition-all', style === 'multiple_choice' ? 'border-primary ring-2 ring-primary/20' : 'hover:border-primary/30')}>
+                <ListChecks size={20} className="text-accent mb-2" />
+                <p className="font-medium text-foreground text-sm">Opción múltiple</p>
+                <p className="text-xs text-muted-foreground mt-1">Eliges la respuesta correcta entre 3 opciones</p>
+              </button>
+            </div>
+          </div>
+
           <div>
             <label className="text-sm font-medium text-foreground mb-3 block">Tamaño de sesión</label>
             <div className="flex gap-3">
@@ -310,8 +348,8 @@ export default function FlashCards() {
                 )}
               </div>
 
-              {/* Test mode input */}
-              {mode === 'test' && !showFeedback && (
+              {/* Test mode — fill text input */}
+              {mode === 'test' && style === 'fill' && !showFeedback && (
                 <div className="mt-4 flex gap-2">
                   <input
                     value={testAnswer}
@@ -325,6 +363,46 @@ export default function FlashCards() {
                     className="px-4 py-3 bg-primary text-primary-foreground rounded-xl disabled:opacity-40">
                     {evaluating ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                   </button>
+                </div>
+              )}
+
+              {/* Test mode — multiple choice options */}
+              {mode === 'test' && style === 'multiple_choice' && card.options && (
+                <div className="mt-4 grid gap-2">
+                  {card.options.map((opt, i) => {
+                    const isCorrect = opt === card.answer;
+                    const isSelected = selectedOption === opt;
+                    const reveal = !!selectedOption;
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => handleMultipleChoice(opt)}
+                        disabled={reveal}
+                        className={cn(
+                          'w-full text-left px-4 py-3 rounded-xl border text-sm font-medium transition-all flex items-center justify-between gap-3',
+                          !reveal && 'border-border bg-card hover:border-primary/40 hover:bg-primary/5',
+                          reveal && isCorrect && 'border-success/40 bg-success/10 text-foreground',
+                          reveal && isSelected && !isCorrect && 'border-destructive/40 bg-destructive/10 text-foreground',
+                          reveal && !isSelected && !isCorrect && 'border-border bg-card text-muted-foreground opacity-60'
+                        )}
+                      >
+                        <span className="flex items-center gap-3">
+                          <span className={cn(
+                            'w-6 h-6 rounded-full border flex items-center justify-center text-xs font-semibold shrink-0',
+                            !reveal && 'border-border text-muted-foreground',
+                            reveal && isCorrect && 'border-success bg-success text-success-foreground',
+                            reveal && isSelected && !isCorrect && 'border-destructive bg-destructive text-destructive-foreground',
+                            reveal && !isSelected && !isCorrect && 'border-border text-muted-foreground'
+                          )}>
+                            {String.fromCharCode(65 + i)}
+                          </span>
+                          <span className="leading-snug">{opt}</span>
+                        </span>
+                        {reveal && isCorrect && <CheckCircle size={16} className="text-success shrink-0" />}
+                        {reveal && isSelected && !isCorrect && <XCircle size={16} className="text-destructive shrink-0" />}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
 
