@@ -252,7 +252,25 @@ export default function FlashCards() {
             </div>
           </div>
 
-          {/* Session size */}
+          {/* Style */}
+          <div>
+            <label className="text-sm font-medium text-foreground mb-3 block">Elige el estilo</label>
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={() => setStyle('fill')}
+                className={cn('stat-card text-left transition-all', style === 'fill' ? 'border-primary ring-2 ring-primary/20' : 'hover:border-primary/30')}>
+                <PenLine size={20} className="text-primary mb-2" />
+                <p className="font-medium text-foreground text-sm">Rellenar texto</p>
+                <p className="text-xs text-muted-foreground mt-1">Escribes tu propia respuesta a cada pregunta</p>
+              </button>
+              <button onClick={() => setStyle('multiple_choice')}
+                className={cn('stat-card text-left transition-all', style === 'multiple_choice' ? 'border-primary ring-2 ring-primary/20' : 'hover:border-primary/30')}>
+                <ListChecks size={20} className="text-accent mb-2" />
+                <p className="font-medium text-foreground text-sm">Opción múltiple</p>
+                <p className="text-xs text-muted-foreground mt-1">Eliges la respuesta correcta entre 3 opciones</p>
+              </button>
+            </div>
+          </div>
+
           <div>
             <label className="text-sm font-medium text-foreground mb-3 block">Tamaño de sesión</label>
             <div className="flex gap-3">
