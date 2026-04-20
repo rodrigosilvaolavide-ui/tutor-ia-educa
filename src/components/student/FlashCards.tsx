@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { RotateCcw, CheckCircle, XCircle, MinusCircle, ChevronRight, Zap, Send, Loader2 } from 'lucide-react';
+import { RotateCcw, CheckCircle, XCircle, MinusCircle, ChevronRight, Zap, Send, Loader2, PenLine, ListChecks } from 'lucide-react';
 import { courses } from '@/lib/mock-data';
 import { FlashCard } from '@/lib/gamification';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,20 +12,21 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 type FlashCardMode = 'review' | 'test';
+type FlashCardStyle = 'fill' | 'multiple_choice';
 type SessionSize = 5 | 10 | 15;
 type Phase = 'setup' | 'loading' | 'session' | 'results';
 
 interface ReviewResult { card: FlashCard; rating: 'knew' | 'partial' | 'didnt_know' }
 interface TestResult { card: FlashCard; answer: string; rating: 'correct' | 'partial' | 'incorrect'; feedback: string }
 
-async function generateFlashCards(courseName: string, topic: string, count: number): Promise<FlashCard[]> {
+async function generateFlashCards(courseName: string, topic: string, count: number, style: FlashCardStyle): Promise<FlashCard[]> {
   const resp = await fetch(`${SUPABASE_URL}/functions/v1/generate-flashcards`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${SUPABASE_KEY}`,
     },
-    body: JSON.stringify({ courseName, topic, count }),
+    body: JSON.stringify({ courseName, topic, count, style }),
   });
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({ error: 'Error de red' }));
