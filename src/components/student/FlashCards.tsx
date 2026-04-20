@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { RotateCcw, CheckCircle, XCircle, MinusCircle, ChevronRight, Zap, Send, Loader2, PenLine, ListChecks } from 'lucide-react';
+import { RotateCcw, CheckCircle, XCircle, MinusCircle, ChevronRight, Zap, Send, Loader2, PenLine, ListChecks, Lightbulb } from 'lucide-react';
 import { courses } from '@/lib/mock-data';
 import { FlashCard } from '@/lib/gamification';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -52,6 +52,23 @@ async function evaluateAnswer(question: string, expectedAnswer: string, studentA
   return resp.json();
 }
 
+async function explainAnswer(question: string, correctAnswer: string, studentAnswer: string, topic: string, courseName: string): Promise<string> {
+  const resp = await fetch(`${SUPABASE_URL}/functions/v1/explain-flashcard`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+    },
+    body: JSON.stringify({ question, correctAnswer, studentAnswer, topic, courseName }),
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({ error: 'Error de red' }));
+    throw new Error(err.error || 'Error generando explicación');
+  }
+  const data = await resp.json();
+  return data.explanation as string;
+}
+
 export default function FlashCards() {
   const [phase, setPhase] = useState<Phase>('setup');
   const [selectedCourse, setSelectedCourse] = useState('');
@@ -70,6 +87,8 @@ export default function FlashCards() {
   const [evaluating, setEvaluating] = useState(false);
   const [mastery, setMastery] = useState<MasteryState>(initMastery(0));
   const [cardMasteryMap, setCardMasteryMap] = useState<CardMasteryMap>({});
+  const [explanation, setExplanation] = useState<string | null>(null);
+  const [explaining, setExplaining] = useState(false);
 
   const startSession = async () => {
     const course = courses.find(c => c.id === selectedCourse);
@@ -134,7 +153,7 @@ export default function FlashCards() {
     }
   };
 
-  const handleMultipleChoice = (option: string) => {
+  const handleMultipleChoice = async (option: string) => {
     if (selectedOption || evaluating) return;
     const card = cards[currentIndex];
     const isCorrect = option === card.answer;
@@ -148,12 +167,29 @@ export default function FlashCards() {
     setMastery(updated.mastery);
     setCardMasteryMap(updated.cardMap);
     setShowFeedback(true);
+
+    // If incorrect, fetch a brief AI explanation
+    if (!isCorrect) {
+      setExplaining(true);
+      setExplanation(null);
+      try {
+        const courseName = courses.find(c => c.id === selectedCourse)?.name || '';
+        const exp = await explainAnswer(card.question, card.answer, option, card.topic || selectedTopic || 'General', courseName);
+        setExplanation(exp);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setExplaining(false);
+      }
+    }
   };
 
   const nextCard = () => {
     setFlipped(false);
     setShowFeedback(false);
     setSelectedOption(null);
+    setExplanation(null);
+    setExplaining(false);
     if (currentIndex + 1 >= cards.length) {
       setPhase('results');
     } else {
@@ -427,6 +463,26 @@ export default function FlashCards() {
                           <p className="text-xs text-muted-foreground mb-1">Respuesta correcta</p>
                           <p className="text-sm text-foreground">{card.answer}</p>
                         </div>
+                        {result.rating === 'incorrect' && (explaining || explanation) && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="p-4 rounded-xl border border-primary/20 bg-primary/5"
+                          >
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <Lightbulb size={14} className="text-primary" />
+                              <p className="text-xs font-medium text-primary">Por qué es la correcta</p>
+                            </div>
+                            {explaining ? (
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Loader2 size={14} className="animate-spin" />
+                                Generando explicación...
+                              </div>
+                            ) : (
+                              <p className="text-sm text-foreground leading-relaxed">{explanation}</p>
+                            )}
+                          </motion.div>
+                        )}
                         <button onClick={nextCard}
                           className="w-full py-3 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 flex items-center justify-center gap-2">
                           {currentIndex + 1 >= cards.length ? 'Ver resultados' : 'Siguiente'} <ChevronRight size={16} />
