@@ -348,8 +348,8 @@ export default function FlashCards() {
                 )}
               </div>
 
-              {/* Test mode input */}
-              {mode === 'test' && !showFeedback && (
+              {/* Test mode — fill text input */}
+              {mode === 'test' && style === 'fill' && !showFeedback && (
                 <div className="mt-4 flex gap-2">
                   <input
                     value={testAnswer}
@@ -363,6 +363,46 @@ export default function FlashCards() {
                     className="px-4 py-3 bg-primary text-primary-foreground rounded-xl disabled:opacity-40">
                     {evaluating ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                   </button>
+                </div>
+              )}
+
+              {/* Test mode — multiple choice options */}
+              {mode === 'test' && style === 'multiple_choice' && card.options && (
+                <div className="mt-4 grid gap-2">
+                  {card.options.map((opt, i) => {
+                    const isCorrect = opt === card.answer;
+                    const isSelected = selectedOption === opt;
+                    const reveal = !!selectedOption;
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => handleMultipleChoice(opt)}
+                        disabled={reveal}
+                        className={cn(
+                          'w-full text-left px-4 py-3 rounded-xl border text-sm font-medium transition-all flex items-center justify-between gap-3',
+                          !reveal && 'border-border bg-card hover:border-primary/40 hover:bg-primary/5',
+                          reveal && isCorrect && 'border-success/40 bg-success/10 text-foreground',
+                          reveal && isSelected && !isCorrect && 'border-destructive/40 bg-destructive/10 text-foreground',
+                          reveal && !isSelected && !isCorrect && 'border-border bg-card text-muted-foreground opacity-60'
+                        )}
+                      >
+                        <span className="flex items-center gap-3">
+                          <span className={cn(
+                            'w-6 h-6 rounded-full border flex items-center justify-center text-xs font-semibold shrink-0',
+                            !reveal && 'border-border text-muted-foreground',
+                            reveal && isCorrect && 'border-success bg-success text-success-foreground',
+                            reveal && isSelected && !isCorrect && 'border-destructive bg-destructive text-destructive-foreground',
+                            reveal && !isSelected && !isCorrect && 'border-border text-muted-foreground'
+                          )}>
+                            {String.fromCharCode(65 + i)}
+                          </span>
+                          <span className="leading-snug">{opt}</span>
+                        </span>
+                        {reveal && isCorrect && <CheckCircle size={16} className="text-success shrink-0" />}
+                        {reveal && isSelected && !isCorrect && <XCircle size={16} className="text-destructive shrink-0" />}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
 
