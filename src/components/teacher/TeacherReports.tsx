@@ -15,6 +15,12 @@ const reports = [
   { id: 'r8', title: 'Temas débiles detectados en simulacros', type: 'Simulacros', date: '17 mar 2026', icon: <Target size={16} className="text-warning" /> },
 ];
 
+const simulacroInsights = [
+  { label: 'Brecha crítica', text: '3°B concentra los resultados más bajos: 48% de score promedio y solo 22% de alumnos listos para rendir.', tone: 'text-destructive' },
+  { label: 'Tema recurrente', text: 'Los errores se agrupan en Ecuaciones lineales, Textos argumentativos y problemas de interpretación de consignas.', tone: 'text-warning' },
+  { label: 'Acción sugerida', text: 'Antes del próximo simulacro, conviene abrir una sesión guiada de repaso y una práctica corta de preguntas tipo examen.', tone: 'text-primary' },
+];
+
 export default function TeacherReports({ onBack }: TeacherReportsProps) {
   return (
     <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-6 animate-fade-in">
@@ -59,6 +65,12 @@ export default function TeacherReports({ onBack }: TeacherReportsProps) {
             <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Simulacros — Positivo</p>
             <p className="text-sm text-foreground">70% de alumnos de 3°A están "Listos para rendir" con un score promedio de 79%. La práctica constante da resultados.</p>
           </div>
+          {simulacroInsights.map(insight => (
+            <div key={insight.label} className="p-3 bg-card rounded-lg border border-border">
+              <p className={`text-xs uppercase tracking-wider mb-1 ${insight.tone}`}>{insight.label}</p>
+              <p className="text-sm text-foreground">{insight.text}</p>
+            </div>
+          ))}
         </div>
       </div>
 
