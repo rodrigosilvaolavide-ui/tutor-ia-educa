@@ -33,6 +33,38 @@ const mockChatSessions = [
 // Topics the student hasn't studied yet
 const pendingTopics = ['Circunferencia', 'Culturas preincaicas', 'Present Perfect', 'Regiones naturales'];
 
+const getSimulacroDiscovery = (student: typeof mockStudents[number]) => {
+  if (student.simulacros.completed === 0) {
+    return {
+      title: 'Sin evidencia de simulacros',
+      insight: 'Aún no hay resultados para detectar brechas de preparación. Conviene asignar un primer simulacro diagnóstico.',
+      action: 'Prioridad: obtener línea base antes de recomendar refuerzo.',
+    };
+  }
+
+  if (student.simulacros.readiness === 'ready') {
+    return {
+      title: 'Preparación sólida',
+      insight: `Los simulacros muestran estabilidad: ${student.simulacros.avgScore}% de score promedio y buen nivel para rendir.`,
+      action: 'Siguiente paso: desafiar con preguntas de mayor complejidad y revisar errores finos.',
+    };
+  }
+
+  if (student.simulacros.readiness === 'almost') {
+    return {
+      title: 'Brechas puntuales detectadas',
+      insight: `Está cerca del objetivo, pero el ${student.simulacros.avgScore}% promedio sugiere errores recurrentes en algunos temas.`,
+      action: `Siguiente paso: reforzar ${student.weakTopics[0] || 'los temas con más errores'} antes del próximo intento.`,
+    };
+  }
+
+  return {
+    title: 'Riesgo en preparación',
+    insight: `Los simulacros muestran una brecha importante: ${student.simulacros.avgScore}% de score promedio en ${student.simulacros.completed} intento(s).`,
+    action: `Siguiente paso: repaso guiado de ${student.weakTopics[0] || 'conceptos base'} y práctica corta antes de repetir simulacro.`,
+  };
+};
+
 // Mock per-topic mastery breakdown for students
 const mockTopicMastery: Record<string, { topic: string; unknown: number; learning: number; solid: number; mastered: number }[]> = {
   default: [
@@ -195,6 +227,8 @@ export default function TeacherStudents({ onBack, initialStudentId, onClearStude
 
   // Student detail view
   if (student) {
+    const simulacroDiscovery = getSimulacroDiscovery(student);
+
     return (
       <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-6 animate-fade-in">
         <button onClick={handleBack} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
@@ -398,6 +432,24 @@ export default function TeacherStudents({ onBack, initialStudentId, onClearStude
                   : `Necesita reforzar (${student.simulacros.avgScore}% prom.). Recomendar estudio guiado.`
                 }
               </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card border-info/20 bg-info/5">
+          <div className="flex items-center gap-2 mb-3">
+            <Target size={16} className="text-info" />
+            <h3 className="heading-4 text-foreground">Descubrimientos de simulacros</h3>
+          </div>
+          <div className="grid md:grid-cols-3 gap-3">
+            <div className="p-3 bg-card rounded-lg">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Lectura</p>
+              <p className="text-sm font-medium text-foreground">{simulacroDiscovery.title}</p>
+            </div>
+            <div className="p-3 bg-card rounded-lg md:col-span-2">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Insight</p>
+              <p className="text-sm text-foreground">{simulacroDiscovery.insight}</p>
+              <p className="text-xs text-muted-foreground mt-2">{simulacroDiscovery.action}</p>
             </div>
           </div>
         </div>
