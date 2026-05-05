@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { mockStudents } from '@/lib/mock-data';
-import { Search, Filter, ArrowLeft, Clock, BookOpen, TrendingUp, AlertTriangle, Sparkles, MessageSquare, X, ChevronRight, ChevronDown, ExternalLink, Layers, Target, MessageCircleQuestion, StickyNote, CheckCircle, XCircle } from 'lucide-react';
+import { Search, Filter, ArrowLeft, Clock, BookOpen, TrendingUp, AlertTriangle, Sparkles, MessageSquare, X, ChevronRight, ChevronDown, ExternalLink, Layers, Target, MessageCircleQuestion, StickyNote, CheckCircle, XCircle, Info } from 'lucide-react';
 import { getConfusionSignals } from '@/lib/confusion-signals';
 import { getNotesTrackingRecords } from '@/lib/notes-tracking';
 import { cn } from '@/lib/utils';
