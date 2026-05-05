@@ -7,9 +7,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, GraduationCap, Users, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { UserRole } from '@/lib/types';
+import { supabase } from '@/integrations/supabase/client';
+
+const DEMO_PASSWORD = 'demo1234';
+const DEMO_ACCOUNTS = [
+  { email: 'alumno@demo.com', label: 'Alumno', icon: GraduationCap },
+  { email: 'profesor@demo.com', label: 'Profesor', icon: Users },
+  { email: 'directivo@demo.com', label: 'Directivo', icon: Building2 },
+] as const;
 
 const signInSchema = z.object({
   email: z.string().trim().email('Email inválido').max(255),
