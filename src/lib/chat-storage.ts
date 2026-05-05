@@ -1,4 +1,5 @@
 import { ChatMessage } from '@/lib/types';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface ChatSession {
   id: string;
@@ -11,58 +12,87 @@ export interface ChatSession {
   updatedAt: string;
 }
 
-const STORAGE_KEY = 'tutor-chat-sessions';
+type Row = {
+  id: string;
+  course_id: string;
+  course_name: string;
+  topic: string | null;
+  mode: string | null;
+  messages: unknown;
+  created_at: string;
+  updated_at: string;
+};
 
-function getSessions(): ChatSession[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveSessions(sessions: ChatSession[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
-}
-
-export function listSessions(): ChatSession[] {
-  return getSessions().sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-}
-
-export function getSession(id: string): ChatSession | undefined {
-  return getSessions().find(s => s.id === id);
-}
-
-export function createSession(courseId: string, courseName: string, topic: string, mode: string): ChatSession {
-  const session: ChatSession = {
-    id: `session-${Date.now()}`,
-    courseId,
-    courseName,
-    topic,
-    mode,
-    messages: [],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+function rowToSession(r: Row): ChatSession {
+  return {
+    id: r.id,
+    courseId: r.course_id,
+    courseName: r.course_name,
+    topic: r.topic ?? 'General',
+    mode: r.mode ?? 'Teoría',
+    messages: Array.isArray(r.messages) ? (r.messages as ChatMessage[]) : [],
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
   };
-  const sessions = getSessions();
-  sessions.push(session);
-  saveSessions(sessions);
-  return session;
 }
 
-export function updateSessionMessages(id: string, messages: ChatMessage[], mode?: string) {
-  const sessions = getSessions();
-  const idx = sessions.findIndex(s => s.id === id);
-  if (idx !== -1) {
-    sessions[idx].messages = messages;
-    sessions[idx].updatedAt = new Date().toISOString();
-    if (mode) sessions[idx].mode = mode;
-    saveSessions(sessions);
-  }
+export async function listSessions(): Promise<ChatSession[]> {
+  const { data, error } = await supabase
+    .from('chat_sessions')
+    .select('*')
+    .order('updated_at', { ascending: false });
+  if (error || !data) return [];
+  return (data as Row[]).map(rowToSession);
 }
 
-export function deleteSession(id: string) {
-  const sessions = getSessions().filter(s => s.id !== id);
-  saveSessions(sessions);
+export async function getSession(id: string): Promise<ChatSession | undefined> {
+  const { data } = await supabase.from('chat_sessions').select('*').eq('id', id).maybeSingle();
+  return data ? rowToSession(data as Row) : undefined;
+}
+
+export async function createSession(
+  courseId: string,
+  courseName: string,
+  topic: string,
+  mode: string
+): Promise<ChatSession> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('No autenticado');
+
+  // Get school_id from profile
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('school_id')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  const { data, error } = await supabase
+    .from('chat_sessions')
+    .insert({
+      user_id: user.id,
+      school_id: profile?.school_id ?? null,
+      course_id: courseId,
+      course_name: courseName,
+      topic,
+      mode,
+      messages: [],
+    })
+    .select()
+    .single();
+
+  if (error || !data) throw error ?? new Error('No se pudo crear la sesión');
+  return rowToSession(data as Row);
+}
+
+export async function updateSessionMessages(id: string, messages: ChatMessage[], mode?: string) {
+  const patch = {
+    messages: messages as unknown,
+    updated_at: new Date().toISOString(),
+    ...(mode ? { mode } : {}),
+  } as never;
+  await supabase.from('chat_sessions').update(patch).eq('id', id);
+}
+
+export async function deleteSession(id: string) {
+  await supabase.from('chat_sessions').delete().eq('id', id);
 }
