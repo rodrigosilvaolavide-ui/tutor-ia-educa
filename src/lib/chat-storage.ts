@@ -85,11 +85,11 @@ export async function createSession(
 }
 
 export async function updateSessionMessages(id: string, messages: ChatMessage[], mode?: string) {
-  const patch: Record<string, unknown> = {
+  const patch = {
     messages: messages as unknown,
     updated_at: new Date().toISOString(),
-  };
-  if (mode) patch.mode = mode;
+    ...(mode ? { mode } : {}),
+  } as never;
   await supabase.from('chat_sessions').update(patch).eq('id', id);
 }
 

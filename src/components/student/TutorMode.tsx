@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Sparkles, Plus, ChevronDown, ChevronRight, ArrowLeft, MessageCircle, Clock, CheckCircle2, Loader2 } from 'lucide-react';
 import { courses } from '@/lib/mock-data';
 import { listSessions, ChatSession } from '@/lib/chat-storage';
@@ -33,17 +33,20 @@ export default function TutorMode({ onExit, initialCourseId, initialSession, ini
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Group sessions by course
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+
+  useEffect(() => {
+    listSessions().then(setSessions);
+  }, [refreshKey, chatState]);
+
   const sessionsByCourse = useMemo(() => {
-    const sessions = listSessions();
     const grouped: Record<string, ChatSession[]> = {};
     for (const s of sessions) {
       if (!grouped[s.courseId]) grouped[s.courseId] = [];
       grouped[s.courseId].push(s);
     }
     return grouped;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [refreshKey, chatState]);
+  }, [sessions]);
 
   const toggleCourse = (courseId: string) => {
     setExpandedCourses(prev => {

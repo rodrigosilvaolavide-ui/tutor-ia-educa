@@ -203,9 +203,6 @@ export default function TutorChat({ courseId, courseName, topic, onBack, existin
     setHasStarted(true);
     setIsTyping(true);
 
-    const newSession = createSession(courseId, courseName, topic || 'General', tutorMode);
-    setSessionId(newSession.id);
-
     let assistantSoFar = '';
     const upsertAssistant = (chunk: string) => {
       assistantSoFar += chunk;
@@ -218,18 +215,27 @@ export default function TutorChat({ courseId, courseName, topic, onBack, existin
       });
     };
 
-    streamChat({
-      messages: [],
-      courseName,
-      topic: topic || 'General',
-      mode: tutorMode,
-      onDelta: upsertAssistant,
-      onDone: () => setIsTyping(false),
-      onError: (err) => {
-        setIsTyping(false);
-        toast.error(err);
-      },
-    });
+    (async () => {
+      try {
+        const newSession = await createSession(courseId, courseName, topic || 'General', tutorMode);
+        setSessionId(newSession.id);
+      } catch (e) {
+        toast.error('No se pudo guardar la sesión');
+      }
+
+      streamChat({
+        messages: [],
+        courseName,
+        topic: topic || 'General',
+        mode: tutorMode,
+        onDelta: upsertAssistant,
+        onDone: () => setIsTyping(false),
+        onError: (err) => {
+          setIsTyping(false);
+          toast.error(err);
+        },
+      });
+    })();
   }, []);
 
   const handleSend = useCallback((text?: string) => {
