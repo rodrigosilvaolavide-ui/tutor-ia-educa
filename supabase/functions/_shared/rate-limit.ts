@@ -19,9 +19,13 @@ export async function checkRateLimit(
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("school_id")
+    .select("school_id, role")
     .eq("id", user.id)
     .maybeSingle();
+
+  if (profile?.role === 'super_admin') {
+    return { allowed: true, userId: user.id, schoolId: null };
+  }
 
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const { count } = await supabase
