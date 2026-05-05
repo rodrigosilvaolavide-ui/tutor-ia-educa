@@ -78,6 +78,12 @@ export default function MyClass() {
       {/* Classmate gallery */}
       <div>
         <h2 className="heading-3 text-foreground mb-4">Compañeros de sección</h2>
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs mb-4">
+          <Info size={14} className="shrink-0" />
+          <span>
+            Ranking de demo — aparecerán tus compañeros reales cuando más alumnos estén activos en la app.
+          </span>
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {mockClassmates.map((c) => (
             <div key={c.id} className="stat-card text-center py-5">
