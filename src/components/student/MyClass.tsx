@@ -1,4 +1,4 @@
-import { Trophy, Flame, TrendingUp, Star, Users } from 'lucide-react';
+import { Trophy, Flame, TrendingUp, Star, Users, Info } from 'lucide-react';
 import { mockClassmates, currentStudentStats, getStudentLevel } from '@/lib/gamification';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
