@@ -1,7 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { checkRateLimit } from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") ?? "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
@@ -9,6 +10,18 @@ const corsHeaders = {
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  const { allowed } = await checkRateLimit(
+    req.headers.get("Authorization"),
+    "generate-simulacro",
+    30
+  );
+  if (!allowed) {
+    return new Response(
+      JSON.stringify({ error: "Límite diario alcanzado. Vuelve mañana." }),
+      { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 
   try {
