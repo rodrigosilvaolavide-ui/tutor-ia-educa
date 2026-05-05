@@ -51,7 +51,8 @@ interface AppLayoutProps {
 }
 
 export default function AppLayout({ currentView, onNavigate, children }: AppLayoutProps) {
-  const { role, setRole, userName } = useRole();
+  const { role, setRole, userName, isSuperAdmin } = useRole();
+  const { signOut } = useAuth();
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navItems = navByRole[role];
@@ -90,7 +91,7 @@ export default function AppLayout({ currentView, onNavigate, children }: AppLayo
           ))}
         </nav>
 
-        {/* Role Switcher */}
+        {/* Role Switcher / User */}
         <div className="p-3 border-t border-sidebar-border">
           <div className="relative">
             <button
@@ -108,19 +109,30 @@ export default function AppLayout({ currentView, onNavigate, children }: AppLayo
             </button>
             {roleMenuOpen && (
               <div className="absolute bottom-full left-0 right-0 mb-1 bg-card text-foreground border border-border rounded-xl shadow-lg py-1 z-50">
-                <p className="px-3 py-1.5 text-xs text-muted-foreground font-medium">Cambiar vista</p>
-                {(['alumno', 'profesor', 'directivo'] as UserRole[]).map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => { setRole(r); setRoleMenuOpen(false); onNavigate('home'); }}
-                    className={cn(
-                      'w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors',
-                      role === r ? 'text-primary font-medium' : 'text-foreground'
-                    )}
-                  >
-                    {roleLabels[r]}
-                  </button>
-                ))}
+                {isSuperAdmin && (
+                  <>
+                    <p className="px-3 py-1.5 text-xs text-muted-foreground font-medium">Cambiar vista</p>
+                    {(['alumno', 'profesor', 'directivo'] as UserRole[]).map((r) => (
+                      <button
+                        key={r}
+                        onClick={() => { setRole(r); setRoleMenuOpen(false); onNavigate('home'); }}
+                        className={cn(
+                          'w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors',
+                          role === r ? 'text-primary font-medium' : 'text-foreground'
+                        )}
+                      >
+                        {roleLabels[r]}
+                      </button>
+                    ))}
+                    <div className="border-t border-border my-1" />
+                  </>
+                )}
+                <button
+                  onClick={() => { setRoleMenuOpen(false); signOut(); }}
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors flex items-center gap-2 text-foreground"
+                >
+                  <LogOut size={14} /> Cerrar sesión
+                </button>
               </div>
             )}
           </div>
@@ -159,19 +171,29 @@ export default function AppLayout({ currentView, onNavigate, children }: AppLayo
               </button>
             ))}
             <div className="border-t border-border pt-2 mt-2">
-              <p className="px-3 py-1 text-xs text-muted-foreground">Cambiar vista</p>
-              {(['alumno', 'profesor', 'directivo'] as UserRole[]).map((r) => (
-                <button
-                  key={r}
-                  onClick={() => { setRole(r); setMobileMenuOpen(false); onNavigate('home'); }}
-                  className={cn(
-                    'w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-muted',
-                    role === r ? 'text-primary font-medium' : 'text-foreground'
-                  )}
-                >
-                  {roleLabels[r]}
-                </button>
-              ))}
+              {isSuperAdmin && (
+                <>
+                  <p className="px-3 py-1 text-xs text-muted-foreground">Cambiar vista</p>
+                  {(['alumno', 'profesor', 'directivo'] as UserRole[]).map((r) => (
+                    <button
+                      key={r}
+                      onClick={() => { setRole(r); setMobileMenuOpen(false); onNavigate('home'); }}
+                      className={cn(
+                        'w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-muted',
+                        role === r ? 'text-primary font-medium' : 'text-foreground'
+                      )}
+                    >
+                      {roleLabels[r]}
+                    </button>
+                  ))}
+                </>
+              )}
+              <button
+                onClick={() => { setMobileMenuOpen(false); signOut(); }}
+                className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-muted flex items-center gap-2"
+              >
+                <LogOut size={14} /> Cerrar sesión
+              </button>
             </div>
           </div>
         )}
