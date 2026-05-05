@@ -14,7 +14,170 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      ai_usage: {
+        Row: {
+          called_at: string | null
+          function_name: string
+          id: string
+          school_id: string | null
+          tokens_used: number | null
+          user_id: string | null
+        }
+        Insert: {
+          called_at?: string | null
+          function_name: string
+          id?: string
+          school_id?: string | null
+          tokens_used?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          called_at?: string | null
+          function_name?: string
+          id?: string
+          school_id?: string | null
+          tokens_used?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_usage_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_usage_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_sessions: {
+        Row: {
+          course_id: string
+          course_name: string
+          created_at: string | null
+          id: string
+          messages: Json | null
+          mode: string | null
+          school_id: string | null
+          topic: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          course_id: string
+          course_name: string
+          created_at?: string | null
+          id?: string
+          messages?: Json | null
+          mode?: string | null
+          school_id?: string | null
+          topic?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          course_id?: string
+          course_name?: string
+          created_at?: string | null
+          id?: string
+          messages?: Json | null
+          mode?: string | null
+          school_id?: string | null
+          topic?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_sessions_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          full_name: string
+          grade: string | null
+          id: string
+          role: string
+          school_id: string | null
+          section: string | null
+          subject: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          full_name: string
+          grade?: string | null
+          id: string
+          role: string
+          school_id?: string | null
+          section?: string | null
+          subject?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          full_name?: string
+          grade?: string | null
+          id?: string
+          role?: string
+          school_id?: string | null
+          section?: string | null
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      schools: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
