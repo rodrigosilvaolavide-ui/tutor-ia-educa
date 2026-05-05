@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { mockStudents } from '@/lib/mock-data';
-import { Search, Filter, ArrowLeft, Clock, BookOpen, TrendingUp, AlertTriangle, Sparkles, MessageSquare, X, ChevronRight, ChevronDown, ExternalLink, Layers, Target, MessageCircleQuestion, StickyNote, CheckCircle, XCircle } from 'lucide-react';
+import { Search, Filter, ArrowLeft, Clock, BookOpen, TrendingUp, AlertTriangle, Sparkles, MessageSquare, X, ChevronRight, ChevronDown, ExternalLink, Layers, Target, MessageCircleQuestion, StickyNote, CheckCircle, XCircle, Info } from 'lucide-react';
 import { getConfusionSignals } from '@/lib/confusion-signals';
 import { getNotesTrackingRecords } from '@/lib/notes-tracking';
 import { cn } from '@/lib/utils';
@@ -465,6 +465,12 @@ export default function TeacherStudents({ onBack, initialStudentId, onClearStude
                 <h3 className="heading-4 text-foreground">Señales de confusión durante práctica</h3>
               </div>
               <p className="text-xs text-muted-foreground mb-3">Momentos en que el alumno pidió ayuda al Tutor AI durante Flash Cards o Simulacros</p>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs mb-4">
+                <Info size={14} className="shrink-0" />
+                <span>
+                  Datos de demo — se reemplazarán con actividad real de tus alumnos una vez que empiecen a usar la app.
+                </span>
+              </div>
               <div className="space-y-2">
                 {signals.slice(0, 5).map(s => (
                   <div key={s.id} className="flex items-start gap-3 px-3 py-2.5 bg-card rounded-lg border border-border">
