@@ -7,9 +7,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, GraduationCap, Users, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { UserRole } from '@/lib/types';
+import { supabase } from '@/integrations/supabase/client';
+
+const DEMO_PASSWORD = 'demo1234';
+const DEMO_ACCOUNTS = [
+  { email: 'alumno@demo.com', label: 'Alumno', icon: GraduationCap },
+  { email: 'profesor@demo.com', label: 'Profesor', icon: Users },
+  { email: 'directivo@demo.com', label: 'Directivo', icon: Building2 },
+] as const;
 
 const signInSchema = z.object({
   email: z.string().trim().email('Email inválido').max(255),
@@ -67,6 +75,29 @@ export default function Auth() {
     navigate('/');
   };
 
+  const handleDemoLogin = async (email: string) => {
+    setLoading(true);
+    let { error } = await signIn(email, DEMO_PASSWORD);
+    if (error) {
+      // Cuentas demo aún no existen → crearlas y reintentar
+      toast.info('Preparando cuentas demo…');
+      const { error: setupErr } = await supabase.functions.invoke('setup-demo-accounts');
+      if (setupErr) {
+        setLoading(false);
+        toast.error('No se pudieron crear las cuentas demo');
+        return;
+      }
+      ({ error } = await signIn(email, DEMO_PASSWORD));
+    }
+    setLoading(false);
+    if (error) {
+      toast.error('No se pudo ingresar a la demo');
+      return;
+    }
+    toast.success('Sesión demo iniciada');
+    navigate('/');
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md p-8">
@@ -76,6 +107,28 @@ export default function Auth() {
           </div>
           <h1 className="font-heading font-bold text-2xl">StudyAI</h1>
           <p className="text-sm text-muted-foreground">Tutor inteligente</p>
+        </div>
+
+        <div className="mb-6 p-4 rounded-lg border border-border bg-muted/30">
+          <p className="text-xs font-medium text-muted-foreground mb-2 text-center uppercase tracking-wide">
+            Acceso rápido a la demo
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {DEMO_ACCOUNTS.map(({ email, label, icon: Icon }) => (
+              <Button
+                key={email}
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={loading}
+                onClick={() => handleDemoLogin(email)}
+                className="flex flex-col h-auto py-3 gap-1"
+              >
+                <Icon size={16} />
+                <span className="text-xs">{label}</span>
+              </Button>
+            ))}
+          </div>
         </div>
 
         <Tabs defaultValue="signin" className="w-full">
