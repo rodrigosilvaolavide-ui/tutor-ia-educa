@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useRole } from '@/contexts/RoleContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { UserRole } from '@/lib/types';
 import {
   BarChart3, Users,
   LayoutDashboard, ChevronDown, Sparkles, Menu, X,
-  Layers, FileText, GraduationCap, Target
+  Layers, FileText, GraduationCap, Target, LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
