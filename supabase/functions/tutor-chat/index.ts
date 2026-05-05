@@ -137,6 +137,18 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const { allowed } = await checkRateLimit(
+    req.headers.get("Authorization"),
+    "tutor-chat",
+    80
+  );
+  if (!allowed) {
+    return new Response(
+      JSON.stringify({ error: "Límite diario alcanzado. Vuelve mañana." }),
+      { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
   try {
     const { messages, courseName, topic, mode } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
